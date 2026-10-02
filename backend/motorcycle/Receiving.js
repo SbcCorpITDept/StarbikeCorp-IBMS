@@ -1,4 +1,4 @@
-// MCReceiving.js - Receiving-report creation, duplicate-unit checks, lists, and details.
+// Receiving.js - Receiving-report creation, duplicate-unit checks, lists, and details.
 // Apps Script server files share one global scope; no imports are required.
 
 /**

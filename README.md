@@ -4,14 +4,17 @@ Google Apps Script web application for customer credit applications, credit inve
 
 ## Project structure
 
-- Index.html: login, navigation, dashboards, and operation screens.
-- Code.js: Apps Script web app entry point.
-- Backend JavaScript files: grouped services and operations; see [BACKEND_GUIDE.md](BACKEND_GUIDE.md).
-- CASFormTemplate.html, CIRFormTemplate.html, CashSalesFormTemplate.html: printable forms.
-- appsscript.json: Apps Script manifest.
-- .clasp.json: mapping to the existing Apps Script project; contains no login token.
+- `frontend/Index.html` — page shell; pulls in the partials below with `<?!= include('…'); ?>`.
+- `frontend/css/` — Base, Layout, Components, Dashboard styles.
+- `frontend/pages/` — Login, Navbar, Dashboard, Applications, Inventory, Receiving, Transfers, Sales, History markup.
+- `frontend/js/` — App (auth, navigation), Dashboard, Forms (CAS/CIR/Cash tables), Inventory (motorcycle screens).
+- `frontend/print/` — printable CAS, CIR and Cash Sales forms.
+- `backend/core/` — `doGet`/`include`, config, auth, shared helpers, branches, Drive images.
+- `backend/applications/` — CAS, CIR, Cash Sales and dashboard data.
+- `backend/motorcycle/` — inventory, receiving, transfers, sales (Unit Release), history, plus shared database, transaction, rules, setup and diagnostics files. See [BACKEND_GUIDE.md](BACKEND_GUIDE.md).
+- `appsscript.json` — Apps Script manifest. `.clasp.json` maps to the existing Apps Script project; `.claspignore` limits pushes to `frontend/`, `backend/` and the manifest.
 
-Apps Script server files share a global scope. Local .js files upload as server scripts with clasp.
+Apps Script server files share one global scope; folder names become part of each file's name (for example `backend/core/Code`).
 
 ## Save changes to GitHub
 

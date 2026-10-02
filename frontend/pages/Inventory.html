@@ -1,0 +1,529 @@
+    <!-- ==================== MC INV TABLE PAGE ================== -->
+    <div id="mcInventoryPage" class="hidden overflow-y-auto w-full flex-1">
+    
+      <!-- Skeleton -->
+      <div id="mcInventorySkeleton" class="max-w-7xl mx-auto p-8 animate-pulse">
+        <div class="h-9 bg-gray-200 rounded-full w-96 mb-6"></div>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-12 bg-gray-100"></div>
+          <div class="space-y-3 p-6">
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    
+      <!-- Main Content -->
+      <div id="mcInventoryContent" class="hidden">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+          <div class="mb-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+              <div>
+                <h1 class="text-2xl font-bold text-slate-800">Inventory</h1>
+                <p class="text-sm text-slate-500">Current motorcycle stock &amp; status</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="loadMCInventory(true)" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+                </button>
+                <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                  <i data-lucide="map-pin" class="w-4 h-4"></i>
+                  <span id="mcBranchLabel">Branch</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+              <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Total Units</div>
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><i data-lucide="bike" class="w-5 h-5"></i></span>
+                </div>
+                <div id="mcTotalUnits" class="mt-3 text-3xl font-bold text-slate-900">0</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Available</div>
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><i data-lucide="check-circle" class="w-5 h-5"></i></span>
+                </div>
+                <div id="mcAvailableUnits" class="mt-3 text-3xl font-bold text-emerald-600">0</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">In Transit</div>
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><i data-lucide="truck" class="w-5 h-5"></i></span>
+                </div>
+                <div id="mcInTransitUnits" class="mt-3 text-3xl font-bold text-amber-600">0</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Sold</div>
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><i data-lucide="badge-check" class="w-5 h-5"></i></span>
+                </div>
+                <div id="mcSoldUnits" class="mt-3 text-3xl font-bold text-slate-700">0</div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mt-6">
+              <div class="text-sm font-semibold text-slate-800 mb-3">Filters</div>
+              <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                <input id="mcFilterMCID" type="text" placeholder="MCID" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" oninput="window.applyMCFilters()" />
+                <input id="mcFilterEngineNo" type="text" placeholder="Engine No" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" oninput="window.applyMCFilters()" />
+                <input id="mcFilterChassisNo" type="text" placeholder="Chassis No" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" oninput="window.applyMCFilters()" />
+                <input id="mcFilterModel" type="text" placeholder="Model" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" oninput="window.applyMCFilters()" />
+                <select id="mcFilterBranch" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="window.applyMCFilters()">
+                  <option value="">All Branches</option>
+                </select>
+                <select id="mcFilterStatus" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="window.applyMCFilters()">
+                  <option value="">All Statuses</option>
+                  <option value="Available">Available</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Sold">Sold</option>
+                </select>
+              </div>
+              <div class="mt-3">
+                <button class="text-xs text-slate-500 hover:text-slate-800" onclick="window.clearMCFilters()">Clear filters</button>
+              </div>
+            </div>
+          </div>
+    
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">MCID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Current Branch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Last Movement</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-600 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="mcInventoryTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+              </table>
+            </div>
+    
+            <div id="mcInventoryStatus"
+              class="text-sm text-gray-500 px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading MC Inventory...
+            </div>
+    
+            <div id="mcPaginationBar" class="pagination-bar hidden">
+              <div id="mcPaginationInfo" class="pagination-info">Showing <strong>0</strong> entries</div>
+              <div id="mcPaginationControls" class="pagination-controls"></div>
+            </div>
+          </div>
+    
+          <p class="text-xs text-gray-400 flex items-center gap-1">
+            <i class="fas fa-info-circle"></i> Click <strong class="mx-1">View</strong> to open a motorcycle's full profile and movement history.
+          </p>
+        </main>
+      </div>
+    
+      <!-- Create Transaction Modal -->
+      <div id="mcTxModal" class="fixed inset-0 z-50 hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+
+        <!-- Container -->
+        <div class="relative flex min-h-screen items-center justify-center p-6">
+          <div class="w-full max-w-4xl bg-white rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.15)] overflow-hidden">
+          
+            <!-- Header -->
+            <div class="px-8 py-6 border-b border-slate-200">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h2 class="text-xl font-semibold text-slate-900">
+                    Create Transaction
+                  </h2>
+                  <p class="mt-1 text-sm text-slate-500">
+                    Record receiving, transfer, or sale activity.
+                  </p>
+                </div>
+              
+                <button
+                  onclick="closeTxModal()"
+                  class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          
+            <!-- Body -->
+            <div class="max-h-[75vh] overflow-y-auto px-8 py-6 space-y-8">
+            
+              <!-- Transaction Type -->
+              <section>
+                <div class="mb-3">
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Transaction Type
+                  </span>
+                </div>
+              
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button class="px-4 py-3 border border-indigo-600 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium">
+                    RR
+                  </button>
+                
+                  <button class="px-4 py-3 border border-slate-200 hover:border-slate-300 rounded-xl text-sm">
+                    IB-OUT
+                  </button>
+                
+                  <button class="px-4 py-3 border border-slate-200 hover:border-slate-300 rounded-xl text-sm">
+                    IB-IN
+                  </button>
+                
+                  <button class="px-4 py-3 border border-slate-200 hover:border-slate-300 rounded-xl text-sm">
+                    SALE
+                  </button>
+                </div>
+              </section>
+            
+              <!-- Transaction Information -->
+              <section>
+                <div class="mb-4">
+                  <h3 class="text-sm font-semibold text-slate-900">
+                    Transaction Information
+                  </h3>
+                </div>
+              
+                <div>
+                  <!-- Hidden fields required by legacy JS: keep them here so document.getElementById() returns nodes -->
+                  <input type="hidden" id="txType" />
+                  <input type="hidden" id="txSource" />
+                  <input type="hidden" id="txDestination" />
+                  <input type="hidden" id="txBranchCode" />
+                  <input type="hidden" id="txUnitType" />
+                  <input type="hidden" id="txModelCode" />
+                  <input type="hidden" id="txColor" />
+
+                  <div class="grid md:grid-cols-2 gap-5">
+                    <div>
+                      <label class="block text-sm text-slate-600 mb-2">
+                        Date
+                      </label>
+                      <input
+                        id="txDate"
+                        type="date"
+                        class="w-full h-11 rounded-xl border border-slate-300 px-4 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block text-sm text-slate-600 mb-2">
+                        MCID
+                      </label>
+                      <input
+                        id="txMCID"
+                        type="text"
+                        placeholder="MC-00001"
+                        class="w-full h-11 rounded-xl border border-slate-300 px-4 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </section>
+            
+              <!-- Divider -->
+              <div class="border-t border-slate-200"></div>
+            
+              <!-- Motorcycle -->
+              <section>
+                <div class="mb-4">
+                  <h3 class="text-sm font-semibold text-slate-900">
+                    Motorcycle Details
+                  </h3>
+                </div>
+              
+                <div class="grid md:grid-cols-3 gap-5">
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      Engine Number
+                    </label>
+                    <input id="txEngineNo" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      Chassis Number
+                    </label>
+                    <input id="txChassisNo" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      Model
+                    </label>
+                    <input id="txModel" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+                </div>
+              </section>
+            
+              <!-- Divider -->
+              <div class="border-t border-slate-200"></div>
+            
+              <!-- Branch -->
+              <section>
+                <div class="mb-4">
+                  <h3 class="text-sm font-semibold text-slate-900">
+                    Branch Information
+                  </h3>
+                </div>
+              
+                <div class="grid md:grid-cols-3 gap-5">
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      Branch
+                    </label>
+                    <input id="txBranchName" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      Region
+                    </label>
+                    <input id="txRegion" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm text-slate-600 mb-2">
+                      RR Number
+                    </label>
+                    <input id="txRRNo" type="text"
+                      class="w-full h-11 rounded-xl border border-slate-300 px-4">
+                  </div>
+                </div>
+              </section>
+            
+              <!-- Divider -->
+              <div class="border-t border-slate-200"></div>
+            
+              <!-- Notes -->
+              <section>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                  Notes
+                </label>
+              
+                <textarea
+                  id="txRemarks"
+                  rows="4"
+                  placeholder="Add remarks..."
+                  class="w-full rounded-xl border border-slate-300 px-4 py-3 resize-none"
+                ></textarea>
+              </section>
+            
+            </div>
+          
+            <!-- Footer -->
+            <div class="sticky bottom-0 bg-white border-t border-slate-200 px-8 py-5">
+              <div class="flex justify-end gap-3">
+                <button
+                  class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              
+                <button
+                  class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Create Transaction
+                </button>
+              </div>
+            </div>
+          
+          </div>
+        </div>
+      </div>
+
+      <!-- Motorcycle History Modal -->
+      <div id="mcHistoryModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center px-4">
+          <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl">
+            <div class="px-6 py-4 border-b flex items-center justify-between">
+              <div class="text-lg font-semibold">Movement History</div>
+              <button onclick="closeHistoryModal()" class="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <div class="p-6" id="historyContent">
+              <div class="text-sm text-slate-500">Loading...</div>
+            </div>
+            <div class="px-6 py-3 flex justify-end border-t">
+              <button onclick="closeHistoryModal()" class="px-4 py-2 bg-gray-100 rounded">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+    </div>
+    <!-- END Inv TABLE PAGE -->
+
+    <!-- ==================== PHASE 3 PAGE SHELLS (filled in Phase 4) ==================== -->
+
+    <!-- INVENTORY DASHBOARD -->
+    <div id="inventoryDashboardPage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- Header + quick filter -->
+        <div class="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">Inventory Dashboard</h1>
+            <p class="text-sm text-slate-500">Motorcycle stock overview across branches</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="invDashBranch" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="loadInventoryDashboard()">
+              <option value="ALL">All Branches</option>
+            </select>
+            <button onclick="loadInventoryDashboard()" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Total Units</div>
+              <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><i data-lucide="bike" class="w-5 h-5"></i></span>
+            </div>
+            <div id="invTotal" class="mt-3 text-3xl font-bold text-slate-900">0</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Available</div>
+              <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><i data-lucide="check-circle" class="w-5 h-5"></i></span>
+            </div>
+            <div id="invAvailable" class="mt-3 text-3xl font-bold text-emerald-600">0</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">In Transit</div>
+              <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><i data-lucide="truck" class="w-5 h-5"></i></span>
+            </div>
+            <div id="invInTransit" class="mt-3 text-3xl font-bold text-amber-600">0</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Sold Units</div>
+              <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><i data-lucide="badge-check" class="w-5 h-5"></i></span>
+            </div>
+            <div id="invSold" class="mt-3 text-3xl font-bold text-slate-700">0</div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h4 class="text-sm font-bold text-slate-900 mb-1">Inventory by Branch</h4>
+            <p class="text-xs text-slate-400 mb-3">Units currently at each branch</p>
+            <div class="h-64"><canvas id="invBranchChart"></canvas></div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h4 class="text-sm font-bold text-slate-900 mb-1">Inventory by Model</h4>
+            <p class="text-xs text-slate-400 mb-3">Unit count per model</p>
+            <div class="h-64"><canvas id="invModelChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Recent transactions -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-6 overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-900">Recent Transactions</h4>
+            <button onclick="showPage('movementHistoryPage', null)" class="text-xs text-blue-700 hover:underline">View all history</button>
+          </div>
+          <div id="invRecentList" class="divide-y divide-slate-100">
+            <div class="px-5 py-6 text-sm text-slate-400">Loading…</div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- MOTORCYCLE PROFILE -->
+    <div id="unitProfilePage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <button onclick="showPage('mcInventoryPage', null)" class="mb-4 text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Inventory
+        </button>
+        <div id="unitProfileHeading" class="mb-6 flex items-center gap-3">
+          <h1 id="pfTitle" class="text-2xl font-bold text-slate-800 font-mono">Motorcycle Profile</h1>
+          <span id="pfStatusPill" class="hidden px-2.5 py-1 text-xs rounded-full"></span>
+        </div>
+
+        <div id="pfBody" class="hidden">
+          <!-- Details + current status -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-4">Motorcycle Details</div>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                <div><div class="text-slate-400 text-xs">Engine No</div><div id="pfEngine" class="font-mono text-slate-800">-</div></div>
+                <div><div class="text-slate-400 text-xs">Chassis No</div><div id="pfChassis" class="font-mono text-slate-800">-</div></div>
+                <div><div class="text-slate-400 text-xs">Model</div><div id="pfModel" class="text-slate-800">-</div></div>
+                <div><div class="text-slate-400 text-xs">Model Code</div><div id="pfModelCode" class="font-mono text-slate-800">-</div></div>
+                <div><div class="text-slate-400 text-xs">Color</div><div id="pfColor" class="text-slate-800">-</div></div>
+                <div><div class="text-slate-400 text-xs">MCID</div><div id="pfMcid" class="font-mono text-slate-500 text-xs break-all">-</div></div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-4">Current Status</div>
+              <div class="space-y-4 text-sm">
+                <div><div class="text-slate-400 text-xs">Current Branch</div><div id="pfBranch" class="text-slate-800 font-semibold">-</div></div>
+                <div><div class="text-slate-400 text-xs">Status</div><div id="pfStatus" class="text-slate-800 font-semibold">-</div></div>
+                <div><div class="text-slate-400 text-xs">Last Movement</div><div id="pfLastMove" class="text-slate-800">-</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Original RR -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mt-4 flex items-center justify-between">
+            <div>
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Original Receiving Report</div>
+              <div id="pfOriginalRR" class="mt-1 text-lg font-semibold text-slate-800 font-mono">-</div>
+            </div>
+            <button id="pfViewRRBtn" onclick="openRRFromProfile()" class="hidden inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50">
+              <i data-lucide="external-link" class="w-4 h-4"></i> View RR
+            </button>
+          </div>
+
+          <!-- Movement timeline -->
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100">
+              <h4 class="text-sm font-bold text-slate-900">Movement Timeline</h4>
+              <p class="text-xs text-slate-400">Complete history, oldest to newest</p>
+            </div>
+            <div id="pfTimeline" class="p-5"></div>
+          </div>
+        </div>
+
+        <div id="pfLoading" class="animate-pulse">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <div class="h-3 w-32 bg-slate-200 rounded"></div>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="h-5 bg-slate-200 rounded"></div><div class="h-5 bg-slate-200 rounded"></div><div class="h-5 bg-slate-200 rounded"></div>
+                <div class="h-5 bg-slate-100 rounded"></div><div class="h-5 bg-slate-100 rounded"></div><div class="h-5 bg-slate-100 rounded"></div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <div class="h-3 w-24 bg-slate-200 rounded"></div>
+              <div class="h-5 bg-slate-200 rounded"></div><div class="h-5 bg-slate-100 rounded"></div><div class="h-5 bg-slate-100 rounded"></div>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 p-5 space-y-3">
+            <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+            <div class="h-4 bg-slate-100 rounded w-2/3"></div>
+            <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+          </div>
+        </div>
+        <div id="pfError" class="hidden rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-600"></div>
+      </main>
+    </div>
+

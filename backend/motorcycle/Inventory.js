@@ -1,4 +1,4 @@
-// MCInventory.js - Current inventory, available units, profiles, and retained legacy reader.
+// Inventory.js - Current inventory, available units, profiles, and retained legacy reader.
 // Apps Script server files share one global scope; no imports are required.
 
 // =============================================

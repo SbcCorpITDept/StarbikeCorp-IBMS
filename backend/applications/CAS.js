@@ -1,4 +1,4 @@
-// ApplicationsCAS.js - Customer applications, maker lookup, and credit application template rendering.
+// CAS.js - Customer applications, maker lookup, and credit application template rendering.
 // Apps Script server files share one global scope; no imports are required.
 
 // =============================================
@@ -294,7 +294,7 @@ function getSheetData(branch) {
 // CAS — render PDF template
 // =============================================
 function getCasApplicationForm(applicant) {
-  const template = HtmlService.createTemplateFromFile('CASFormTemplate');
+  const template = HtmlService.createTemplateFromFile('frontend/print/CASForm');
   template.applicant = applicant;
   return template.evaluate().getContent();
 }

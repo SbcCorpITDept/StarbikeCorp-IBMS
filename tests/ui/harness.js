@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const html = fs.readFileSync(path.join(__dirname, '../../Index.html'), 'utf8');
+const html = require('../assemble').assemblePage();
 function loadUI(scope = 'CTS-NAG - Naga') {
   const elements = new Map();
   for (const m of html.matchAll(/<([a-z][a-z0-9]*)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)) {
@@ -48,7 +48,7 @@ function loadUI(scope = 'CTS-NAG - Naga') {
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'mock-gas.js'), 'utf8'), context);
   const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].find(m => m[1].includes('let salesData = [];'));
   if (!script) throw new Error('Sales script not found');
-  vm.runInContext(script[1], context, { filename: 'Index.html sales script' });
+  vm.runInContext(script[1], context, { filename: 'frontend/js/Inventory.html sales script' });
   return {
     window: context, el: id => context.document.getElementById(id), alerts, toasts, pages,
     flushOne(index = 0) { const callback = timers.splice(index, 1)[0]; if (!callback) throw new Error('No callback'); callback(); },

@@ -1,0 +1,426 @@
+    <!-- ==================== CAS TABLE PAGE ==================== -->
+    <div id="casTablePage" class="hidden overflow-y-auto w-full flex-1">
+
+      <!-- CAS SKELETON TABLE -->
+      <div id="casTableSkeleton" class="max-w-7xl mx-auto p-8 animate-pulse">
+        <div class="h-9 bg-gray-200 rounded-full w-96 mb-6"></div>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-12 bg-gray-100"></div>
+          <div class="space-y-3 p-6">
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-5/6"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAS TABLE -->
+      <div id="casTableContent" class="hidden">
+        <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          <div class="hidden md:flex flex-col items-center">
+            <span id="pageHeaderTitle" class="roboto-slab text-md font-bold text-slate-800">CUSTOMER APPLICATION SHEET</span>
+            <span id="pageHeaderSubtitle" class="text-xs text-slate-400">View, Print, and generate PDF for Customer Application</span>
+          </div>
+
+          <div class="mb-4 flex items-center gap-2 flex-wrap">
+            <span id="casBranchBadge" class="branch-badge">
+              <i data-lucide="map-pin" class="w-3 h-3"></i>
+              <span id="casBranchLabel">Branch</span>
+            </span>
+          </div>
+
+          <div class="filter-bar">
+            <input id="casFilterAID"       type="text"   placeholder="AID"            class="filter-input w-28"  oninput="window.applyCASFilters()" />
+            <input id="casFilterName"      type="text"   placeholder="Applicant Name" class="filter-input w-52"  oninput="window.applyCASFilters()" />
+            <select id="casFilterStatus"   class="filter-select w-44" onchange="window.applyCASFilters()">
+              <option value="">All Statuses</option>
+              <option value="Review">For Review</option>
+              <option value="Approved">Approved</option>
+              <option value="Disapproved">Disapproved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <select id="casFilterRegion" class="filter-select w-40 hidden" onchange="window.branchFilters.onRegionChange('cas')">
+              <option value="">All Regions</option>
+            </select>
+            <select id="casFilterBranch" class="filter-select w-56 hidden" onchange="window.applyCASFilters()">
+              <option value="">All Branches</option>
+            </select>
+            <input id="casFilterArea"      type="text"   placeholder="Area"           class="filter-input w-36 hidden" oninput="window.applyCASFilters()" />
+            <input id="casFilterCollector" type="text"   placeholder="Collector"      class="filter-input w-36 hidden" oninput="window.applyCASFilters()" />
+            <button class="filter-clear-btn" onclick="window.clearCASFilters()">Clear</button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">AID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Area</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ApplicantName</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Alias</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Applicant</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Type ofApplicant</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="applicantTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+              </table>
+            </div>
+            <div id="tableStatus"
+              class="text-sm text-gray-500 px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading applicant data...
+            </div>
+            <!-- CAS pagination bar (hidden until data loads) -->
+            <div id="casPaginationBar" class="pagination-bar hidden">
+              <div id="casPaginationInfo" class="pagination-info">Showing <strong>0</strong> entries</div>
+              <div id="casPaginationControls" class="pagination-controls"></div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fas fa-info-circle"></i> Click "View" for
+            full details. "Print PDF" generates applicant summary.</p>
+        </main>
+      </div>
+
+      <div id="applicantModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div id="modalBackdrop" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"></div>
+          <div
+            class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-6 pt-5 pb-4 sm:p-6">
+              <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100">
+                    <i class="fas fa-user text-indigo-600 text-xl"></i></div>
+                  <div>
+                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modalName">Applicant Name</h3>
+                    <p class="text-sm text-gray-500" id="modalPosition">Type / Alias</p>
+                  </div>
+                </div>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+              </div>
+              <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
+                <div class="font-medium text-gray-600">AID</div>
+                <div class="text-gray-900" id="modalAID">-</div>
+                <div class="font-medium text-gray-600">ApplicantName</div>
+                <div class="text-gray-900" id="modalApplicantName">-</div>
+                <div class="font-medium text-gray-600">Alias</div>
+                <div class="text-gray-900" id="modalAlias">-</div>
+                <div class="font-medium text-gray-600">Applicant</div>
+                <div class="text-gray-900" id="modalApplicantField">-</div>
+                <div class="font-medium text-gray-600">Type of Applicant</div>
+                <div class="text-gray-900" id="modalType">-</div>
+                <div class="font-medium text-gray-600">Status</div>
+                <div class="text-gray-900" id="modalStatus">-</div>
+                <div class="font-medium text-gray-600">Phone</div>
+                <div class="text-gray-900" id="modalPhone">-</div>
+                <div class="font-medium text-gray-600">Branch</div>
+                <div class="text-gray-900" id="modalBranch">-</div>
+                <div class="font-medium text-gray-600">Notes</div>
+                <div class="text-gray-700 col-span-2 bg-gray-50 p-3 rounded" id="modalNotes">No additional notes</div>
+              </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex flex-wrap justify-end gap-2">
+              <button id="printFromModalBtn" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition"><i class="fas fa-print mr-2"></i> Print PDF</button>
+              <button id="closeBtnInner" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="casPdfPrintContainer" style="display:none;"></div>
+    </div>
+    <!-- END CAS TABLE PAGE -->
+
+    <!-- ==================== CIR TABLE PAGE ==================== -->
+    <div id="cirTablePage" class="hidden overflow-y-auto w-full flex-1">
+
+      <!-- CIR SKELETON PAGE -->
+      <div id="cirTableSkeleton" class="max-w-7xl mx-auto p-8 animate-pulse">
+        <div class="h-9 bg-gray-200 rounded-full w-96 mb-6"></div>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-12 bg-gray-100"></div>
+          <div class="space-y-3 p-6">
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-5/6"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIR TABLE -->
+      <div id="cirTableContent" class="hidden">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          <div class="hidden md:flex flex-col items-center">
+            <span id="pageHeaderTitle" class="roboto-slab text-md font-bold text-slate-800">CREDIT INVESTIGATION REPORT</span>
+            <span id="pageHeaderSubtitle" class="text-xs text-slate-400">View, Print, and generate PDF for Credit Investigation</span>
+          </div>
+
+          <div class="mb-4 flex items-center gap-2 flex-wrap">
+            <span id="cirBranchBadge" class="branch-badge">
+              <i data-lucide="map-pin" class="w-3 h-3"></i>
+              <span id="cirBranchLabel">Branch</span>
+            </span>
+          </div>
+
+          <div class="filter-bar">
+            <input id="cirFilterCID"       type="text"   placeholder="CID"            class="filter-input w-28"  oninput="window.applyCIRFilters()" />
+            <input id="cirFilterName"      type="text"   placeholder="Applicant Name" class="filter-input w-52"  oninput="window.applyCIRFilters()" />
+            <select id="cirFilterStatus"   class="filter-select w-44" onchange="window.applyCIRFilters()">
+              <option value="">All Statuses</option>
+              <option value="Approval">For Approval</option>
+              <option value="Approved">Approved</option>
+              <option value="Disapproved">Disapproved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <select id="cirFilterRegion" class="filter-select w-40 hidden" onchange="window.branchFilters.onRegionChange('cir')">
+              <option value="">All Regions</option>
+            </select>
+            <select id="cirFilterBranch" class="filter-select w-56 hidden" onchange="window.applyCIRFilters()">
+              <option value="">All Branches</option>
+            </select>
+            <input id="cirFilterArea"      type="text"   placeholder="Area"           class="filter-input w-36 hidden" oninput="window.applyCIRFilters()" />
+            <input id="cirFilterCollector" type="text"   placeholder="Collector"      class="filter-input w-36 hidden" oninput="window.applyCIRFilters()" />
+            <button class="filter-clear-btn" onclick="window.clearCIRFilters()">Clear</button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">CID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Area</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ApplicantName</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ALIAS</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">APPLICANT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">TYPE OFAPPLICANT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">STATUS</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="cirTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+              </table>
+            </div>
+            <div id="cirTableStatus"
+              class="text-sm text-gray-500 px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading CIR data...
+            </div>
+            <!-- CIR pagination bar (hidden until data loads) -->
+            <div id="cirPaginationBar" class="pagination-bar hidden">
+              <div id="cirPaginationInfo" class="pagination-info">Showing <strong>0</strong> entries</div>
+              <div id="cirPaginationControls" class="pagination-controls"></div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fas fa-info-circle"></i> Click "View" for
+            full CIR details. "Print PDF" generates CIR summary report.</p>
+        </main>
+      </div>
+
+      <div id="cirModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div id="cirModalBackdrop" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"></div>
+          <div
+            class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-6 pt-5 pb-4 sm:p-6">
+              <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100">
+                    <i class="fas fa-user text-indigo-600 text-xl"></i></div>
+                  <div>
+                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modalCirName">CIR Report</h3>
+                    <p class="text-sm text-gray-500" id="cirModalPosition">Applicant / Investigator</p>
+                  </div>
+                </div>
+                <button id="closeCIRModalBtn" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+              </div>
+              <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
+                <div class="font-medium text-gray-600">CID</div>
+                <div class="text-gray-900" id="modalCID">-</div>
+                <div class="font-medium text-gray-600">ApplicantName</div>
+                <div class="text-gray-900" id="modalCirApplicantName">-</div>
+                <div class="font-medium text-gray-600">Alias</div>
+                <div class="text-gray-900" id="modalCirAlias">-</div>
+                <div class="font-medium text-gray-600">Applicant</div>
+                <div class="text-gray-900" id="modalCirApplicantField">-</div>
+                <div class="font-medium text-gray-600">Type of Applicant</div>
+                <div class="text-gray-900" id="modalCirTypeOfApplicant">-</div>
+                <div class="font-medium text-gray-600">Status</div>
+                <div class="text-gray-900" id="modalCirStatus">-</div>
+                <div class="font-medium text-gray-600">Phone</div>
+                <div class="text-gray-900" id="modalCirPhone">-</div>
+                <div class="font-medium text-gray-600">Branch</div>
+                <div class="text-gray-900" id="modalCirBranch">-</div>
+                <div class="font-medium text-gray-600">Reason for not Approved</div>
+                <div class="text-gray-700 col-span-2 bg-gray-50 p-3 rounded" id="modalCirReason">No findings available
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex flex-wrap justify-end gap-2">
+              <button id="printCIRFromModalBtn" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition"><i class="fas fa-print mr-2"></i> Print PDF</button>
+              <button id="closeCIRBtnInner" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="cirPdfPrintContainer" style="display:none;"></div>
+    </div>
+    <!-- END CIR TABLE PAGE -->
+
+    <!-- ==================== CASH TABLE PAGE ==================== -->
+    <div id="cashTablePage" class="hidden overflow-y-auto w-full flex-1">
+
+      <!-- CASH SALES SKELETON PAGE -->
+      <div id="cashTableSkeleton" class="max-w-7xl mx-auto p-8 animate-pulse">
+        <div class="h-9 bg-gray-200 rounded-full w-96 mb-6"></div>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="h-12 bg-gray-100"></div>
+          <div class="space-y-3 p-6">
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+            <div class="h-5 bg-gray-200 rounded w-5/6"></div>
+            <div class="h-5 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CASH SALES TABLE PAGE -->
+      <div id="cashTableContent" class="hidden">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          <div class="hidden md:flex flex-col items-center">
+            <span id="pageHeaderTitle" class="roboto-slab text-md font-bold text-slate-800">CASH SALES REPORT</span>
+            <span id="pageHeaderSubtitle" class="text-xs text-slate-400">View, Print, and generate PDF for Cash Sales</span>
+          </div>
+
+          <div class="mb-4 flex items-center gap-2 flex-wrap">
+            <span id="cashBranchBadge" class="branch-badge">
+              <i data-lucide="map-pin" class="w-3 h-3"></i>
+              <span id="cashBranchLabel">Branch</span>
+            </span>
+          </div>
+
+          <!-- Cash filter bar — fields match the cash table schema:
+               CSID, Buyer's Name, Sales Type. Area + Collector hidden until Area Manager role -->
+          <div class="filter-bar">
+            <input id="cashFilterCSID"      type="text" placeholder="CSID"         class="filter-input w-28"  oninput="window.applyCashFilters()" />
+            <input id="cashFilterBuyer"     type="text" placeholder="Buyer's Name" class="filter-input w-52"  oninput="window.applyCashFilters()" />
+            <select id="cashFilterSalesType" class="filter-select w-44" onchange="window.applyCashFilters()">
+              <option value="">All Sales Types</option>
+              <option value="Brand New">Brand New</option>
+              <option value="Repo">Repo</option>
+            </select>
+            <select id="cashFilterRegion" class="filter-select w-40 hidden" onchange="window.branchFilters.onRegionChange('cash')">
+              <option value="">All Regions</option>
+            </select>
+            <select id="cashFilterBranch" class="filter-select w-56 hidden" onchange="window.applyCashFilters()">
+              <option value="">All Branches</option>
+            </select>
+            <input id="cashFilterArea"      type="text" placeholder="Area"      class="filter-input w-36 hidden" oninput="window.applyCashFilters()" />
+            <input id="cashFilterCollector" type="text" placeholder="Collector" class="filter-input w-36 hidden" oninput="window.applyCashFilters()" />
+            <button class="filter-clear-btn" onclick="window.clearCashFilters()">Clear</button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">CSID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Area</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Buyer's Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Sales Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="cashTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+              </table>
+            </div>
+            <div id="cashTableStatus"
+              class="text-sm text-gray-500 px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading Cash Sales data...
+            </div>
+            <!-- Cash pagination bar (hidden until data loads) -->
+            <div id="cashPaginationBar" class="pagination-bar hidden">
+              <div id="cashPaginationInfo" class="pagination-info">Showing <strong>0</strong> entries</div>
+              <div id="cashPaginationControls" class="pagination-controls"></div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 flex items-center gap-1">
+            <i class="fas fa-info-circle"></i> Click "View" for full Cash Sales details. "Print PDF" generates the
+            receipt.
+          </p>
+        </main>
+      </div>
+
+      <!-- Cash Modal -->
+      <div id="cashModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div id="cashModalBackdrop" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"></div>
+          <div
+            class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-6 pt-5 pb-4 sm:p-6">
+              <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100">
+                    <i class="fas fa-wallet text-indigo-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modalCashName">Cash Sale</h3>
+                    <p class="text-sm text-gray-500" id="cashModalPosition">Sales Type</p>
+                  </div>
+                </div>
+                <button id="closeCashModalBtn" class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-times text-xl"></i>
+                </button>
+              </div>
+
+              <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
+                <div class="font-medium text-gray-600">CSID</div>
+                <div class="text-gray-900" id="modalCashCSID">-</div>
+                <div class="font-medium text-gray-600">Buyer's Name</div>
+                <div class="text-gray-900" id="modalCashBuyer">-</div>
+                <div class="font-medium text-gray-600">Sales Type</div>
+                <div class="text-gray-900" id="modalCashSalesType">-</div>
+                <div class="font-medium text-gray-600">Contact</div>
+                <div class="text-gray-900" id="modalCashContact">-</div>
+                <div class="font-medium text-gray-600">Email</div>
+                <div class="text-gray-900" id="modalCashEmail">-</div>
+                <div class="font-medium text-gray-600">Branch</div>
+                <div class="text-gray-900" id="modalCashBranch">-</div>
+              </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-3 flex flex-wrap justify-end gap-2">
+              <button id="printCashFromModalBtn" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                <i class="fas fa-print mr-2"></i> Print PDF
+              </button>
+              <button id="closeCashBtnInner" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cashPdfPrintContainer" style="display:none;"></div>
+    </div>
+    <!-- END CASH TABLE PAGE -->
+

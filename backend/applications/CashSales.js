@@ -148,7 +148,7 @@ function getCashData(branch) {
 // CASH — render PDF template (optional, for future)
 // =============================================
 function getCashSalesForm(cash) {
-  const template = HtmlService.createTemplateFromFile('CashSalesFormTemplate');
+  const template = HtmlService.createTemplateFromFile('frontend/print/CashSalesForm');
   template.cash = cash;
   return template.evaluate().getContent();
 }

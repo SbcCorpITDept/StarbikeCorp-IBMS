@@ -1,0 +1,839 @@
+  <!-- ==================== SHARED PAGINATION HELPER ====================
+     Single source of truth for all three tables. Each IIFE creates a
+     pagination state object and calls renderPagination() to draw the
+     controls. Page size is fixed at 25 (per design decision).
+  -->
+  <script>
+    window.PAGE_SIZE = 15;
+
+    /**
+     * Renders a compact pagination control: Prev | 1 2 3 4 5 | Next.
+     * Uses windowed page numbers — shows current ± 2, plus first/last.
+     *
+     * @param {Object} state           — { currentPage, filteredRows }
+     * @param {string} controlsId      — id of the .pagination-controls div
+     * @param {string} infoId          — id of the .pagination-info div
+     * @param {string} barId           — id of the .pagination-bar wrapper
+     * @param {Function} onPageChange  — called with the new page number
+     */
+    window.renderPagination = function(state, controlsId, infoId, barId, onPageChange) {
+      const bar      = document.getElementById(barId);
+      const controls = document.getElementById(controlsId);
+      const info     = document.getElementById(infoId);
+      if (!bar || !controls || !info) return;
+
+      const total      = state.filteredRows.length;
+      const pageSize   = window.PAGE_SIZE;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+      // Clamp current page if filtering shrank the list below it
+      if (state.currentPage > totalPages) state.currentPage = totalPages;
+      if (state.currentPage < 1)          state.currentPage = 1;
+
+      // Hide the bar entirely if there's nothing or only one page worth
+      if (total === 0) {
+        bar.classList.add('hidden');
+        return;
+      }
+      bar.classList.remove('hidden');
+
+      // "Showing X–Y of Z entries"
+      const startIdx = (state.currentPage - 1) * pageSize + 1;
+      const endIdx   = Math.min(state.currentPage * pageSize, total);
+      info.innerHTML = `Showing <strong>${startIdx}–${endIdx}</strong> of <strong>${total}</strong> entries`;
+
+      // Build the compact button list. Windowing: show current ± 2 plus 1 and last.
+      // If list is small (≤7 pages), show all numbers without ellipsis.
+      const pages = [];
+      if (totalPages <= 7) {
+        for (let p = 1; p <= totalPages; p++) pages.push(p);
+      } else {
+        const cur = state.currentPage;
+        const set = new Set([1, totalPages, cur - 1, cur, cur + 1]);
+        // Always include neighbors that exist; filter and sort
+        const sorted = [...set].filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+        // Insert ellipsis markers (represented as null) where gaps > 1 occur
+        for (let i = 0; i < sorted.length; i++) {
+          pages.push(sorted[i]);
+          if (i < sorted.length - 1 && sorted[i + 1] - sorted[i] > 1) pages.push(null);
+        }
+      }
+
+      // Render: Prev | numbers (with possible null ellipsis) | Next
+      let html = `<button class="page-btn" ${state.currentPage === 1 ? 'disabled' : ''} data-page="prev">‹ Prev</button>`;
+      pages.forEach(p => {
+        if (p === null) {
+          html += `<span class="page-btn" style="border:none;background:transparent;cursor:default;">…</span>`;
+        } else {
+          html += `<button class="page-btn ${p === state.currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+        }
+      });
+      html += `<button class="page-btn" ${state.currentPage === totalPages ? 'disabled' : ''} data-page="next">Next ›</button>`;
+
+      controls.innerHTML = html;
+
+      // Wire button clicks — single delegated handler per render
+      controls.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.getAttribute('data-page');
+          let next = state.currentPage;
+          if (action === 'prev')      next = Math.max(1, state.currentPage - 1);
+          else if (action === 'next') next = Math.min(totalPages, state.currentPage + 1);
+          else                        next = parseInt(action, 10);
+          if (next !== state.currentPage) {
+            state.currentPage = next;
+            onPageChange(next);
+          }
+        });
+      });
+    };
+
+    /**
+     * Slices a list of rows for the given page number.
+     */
+    window.paginateRows = function(rows, currentPage) {
+      const start = (currentPage - 1) * window.PAGE_SIZE;
+      return rows.slice(start, start + window.PAGE_SIZE);
+    };
+  </script>
+
+  <!-- ==================== SHARED REGION / BRANCH FILTER ====================
+     One module drives the Region + Branch dropdown pair on all three form
+     tables (Customer Application, Credit Investigation, Cash Sales).
+
+     Branch options come from the rows actually loaded for the page, so they
+     always match the data. Regions come from the BRANCHES sheet via
+     getBranchDirectory() (fetched once, then cached) — that sheet is the only
+     place a branch's Region is recorded.
+
+     Picking a Region narrows the Branch dropdown to that region's branches.
+     Both dropdowns hide themselves when there is nothing to choose between
+     (a branch-scoped user, or a spreadsheet with no Region column filled in).
+  -->
+  <script>
+    window.branchFilters = (function () {
+      'use strict';
+
+      var PAGES = {
+        cas:  { region: 'casFilterRegion',  branch: 'casFilterBranch',  apply: 'applyCASFilters'  },
+        cir:  { region: 'cirFilterRegion',  branch: 'cirFilterBranch',  apply: 'applyCIRFilters'  },
+        cash: { region: 'cashFilterRegion', branch: 'cashFilterBranch', apply: 'applyCashFilters' }
+      };
+
+      var state    = { loaded: false, loading: false, regions: [], byKey: {}, queue: [] };
+      var lastRows = { cas: [], cir: [], cash: [] };
+
+      /** Normalise a branch/region string for comparison. */
+      function nk(v) { return (v || '').toString().trim().toLowerCase().split(/\s+/).join(' '); }
+
+      /* ── Directory (branch → region), fetched once ─────────────────── */
+
+      function indexDirectory(dir) {
+        var map = {};
+        (dir || []).forEach(function (b) {
+          [b.full, b.code, b.name].forEach(function (k) {
+            var key = nk(k);
+            if (key && map[key] === undefined) map[key] = b.region || '';
+          });
+        });
+        return map;
+      }
+
+      function load(cb) {
+        if (state.loaded) { if (cb) cb(); return; }
+        if (cb) state.queue.push(cb);
+        if (state.loading) return;
+        state.loading = true;
+
+        function done(res) {
+          res = res || {};
+          state.regions = res.regions || [];
+          state.byKey   = indexDirectory(res.directory);
+          state.loaded  = true;
+          state.loading = false;
+          var q = state.queue; state.queue = [];
+          q.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
+        }
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(done)
+            .withFailureHandler(function (err) {
+              // Branch filtering still works without it; only Region is lost.
+              console.error('getBranchDirectory() failed —', err);
+              done({});
+            })
+            .getBranchDirectory();
+        } else {
+          done({});
+        }
+      }
+
+      /**
+       * Region for a raw 'Store Branch:' value. '' when the branch is not in
+       * BRANCHES. Tries the canonical "CODE - Name" first, then the code and
+       * the name on their own, so partially-entered data still resolves.
+       */
+      function regionOf(storeBranch) {
+        var key = nk(storeBranch);
+        if (!key) return '';
+        if (state.byKey[key] !== undefined) return state.byKey[key];
+        var dash = key.indexOf(' - ');
+        if (dash > -1) {
+          var code = key.slice(0, dash);
+          var name = key.slice(dash + 3);
+          if (state.byKey[code] !== undefined) return state.byKey[code];
+          if (state.byKey[name] !== undefined) return state.byKey[name];
+        }
+        return '';
+      }
+
+      /* ── Dropdown population ────────────────────────────────────────── */
+
+      function distinctBranches(rows) {
+        var seen = {}, out = [];
+        (rows || []).forEach(function (r) {
+          var b = (r && r.storeBranch != null) ? r.storeBranch.toString().trim() : '';
+          if (b && !seen[nk(b)]) { seen[nk(b)] = true; out.push(b); }
+        });
+        return out.sort(function (a, b) { return a.localeCompare(b); });
+      }
+
+      /** Rebuild a select, keeping the current choice when still offered. */
+      function fillSelect(el, values, placeholder) {
+        if (!el) return;
+        var keep = el.value;
+        el.innerHTML = '';
+        var blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = placeholder;
+        el.appendChild(blank);
+        values.forEach(function (v) {
+          var o = document.createElement('option');
+          o.value = v;
+          o.textContent = v;
+          el.appendChild(o);
+        });
+        el.value = values.indexOf(keep) > -1 ? keep : '';
+      }
+
+      function branchOptions(page, region) {
+        var all = distinctBranches(lastRows[page]);
+        if (!region) return all;
+        return all.filter(function (b) { return nk(regionOf(b)) === nk(region); });
+      }
+
+      function refreshBranchSelect(page) {
+        var ids = PAGES[page];
+        if (!ids) return;
+        var regionEl = document.getElementById(ids.region);
+        fillSelect(document.getElementById(ids.branch),
+                   branchOptions(page, regionEl ? regionEl.value : ''),
+                   'All Branches');
+      }
+
+      /** Call once per data load with the page's full (unfiltered) row set. */
+      function populate(page, rows) {
+        var ids = PAGES[page];
+        if (!ids) return;
+        lastRows[page] = rows || [];
+
+        load(function () {
+          var regionEl = document.getElementById(ids.region);
+          var branchEl = document.getElementById(ids.branch);
+          var branches = distinctBranches(lastRows[page]);
+
+          // Offer only regions this page actually has rows for.
+          var present = {};
+          branches.forEach(function (b) {
+            var r = regionOf(b);
+            if (r) present[nk(r)] = true;
+          });
+          var regions = state.regions.filter(function (r) { return present[nk(r)]; });
+
+          fillSelect(regionEl, regions, 'All Regions');
+          refreshBranchSelect(page);
+
+          // Nothing to choose between — hide rather than show a lone option.
+          if (regionEl) regionEl.classList.toggle('hidden', regions.length < 2);
+          if (branchEl) branchEl.classList.toggle('hidden', branches.length < 2);
+        });
+      }
+
+      function onRegionChange(page) {
+        refreshBranchSelect(page);
+        var ids = PAGES[page];
+        var apply = ids && window[ids.apply];
+        if (typeof apply === 'function') apply();
+      }
+
+      /** Row predicate for the Region + Branch pair, or null when both unset. */
+      function predicate(page) {
+        var ids = PAGES[page];
+        if (!ids) return null;
+        var regionEl = document.getElementById(ids.region);
+        var branchEl = document.getElementById(ids.branch);
+        var region = regionEl ? nk(regionEl.value) : '';
+        var branch = branchEl ? nk(branchEl.value) : '';
+        if (!region && !branch) return null;
+        return function (row) {
+          var b = row ? row.storeBranch : '';
+          if (branch && nk(b) !== branch) return false;
+          if (region && nk(regionOf(b)) !== region) return false;
+          return true;
+        };
+      }
+
+      function clear(page) {
+        var ids = PAGES[page];
+        if (!ids) return;
+        var regionEl = document.getElementById(ids.region);
+        var branchEl = document.getElementById(ids.branch);
+        if (regionEl) regionEl.value = '';
+        if (branchEl) branchEl.value = '';
+        refreshBranchSelect(page);
+      }
+
+      return {
+        load: load,
+        regionOf: regionOf,
+        populate: populate,
+        onRegionChange: onRegionChange,
+        predicate: predicate,
+        clear: clear
+      };
+    })();
+  </script>
+
+  <!-- ==================== CAS TABLE SCRIPT ==================== -->
+  <script>
+    (function () {
+      'use strict';
+      const tbody     = document.getElementById('applicantTableBody');
+      const statusDiv = document.getElementById('tableStatus');
+      let sheetData   = [];
+      let loadingStart = null;
+
+      function fmt(d) { return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+      function esc(t) {
+        if (!t && t !== 0) return '-';
+        const s = t.toString(); if (!s.trim()) return '-';
+        const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+      }
+
+      function loadData() {
+        // Session check: bail and bounce to login if expired
+        if (!window.requireSession()) return;
+
+        const branch = window._userBranch || 'ALL';
+        loadingStart = new Date();
+        if (statusDiv) statusDiv.innerHTML = `<div class="flex items-center"><i class="fas fa-spinner animate-spin mr-2 text-indigo-500"></i><span>Loading data for branch: <strong>${branch === 'ALL' ? 'All Branches' : branch}</strong>…</span></div>`;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(data) {
+              const t = ((new Date()-loadingStart)/1000).toFixed(2);
+              sheetData = Array.isArray(data) ? data : [];
+              statusDiv.innerHTML = sheetData.length === 0
+                ? `<div class="flex items-center text-amber-600"><i class="fas fa-info-circle mr-2"></i>No records found for branch: <strong class="ml-1">${branch === 'ALL' ? 'All Branches' : branch}</strong></div>`
+                : `<div class="flex items-center justify-between w-full"><div class="flex items-center text-emerald-600"><i class="fas fa-check-circle mr-2 text-emerald-500"></i><span class="font-medium">${sheetData.length}</span><span class="ml-1">entries</span><span class="ml-2 text-xs text-slate-400">· ${branch === 'ALL' ? 'All Branches' : branch}</span></div><div class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i>${fmt(new Date())} · <i class="fas fa-bolt mr-1"></i>${t}s</div></div>`;
+              window.branchFilters.populate('cas', sheetData);
+              renderApplicantTable(sheetData);
+            })
+            .withFailureHandler(function(err) {
+              statusDiv.innerHTML = `<div class="flex items-center text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Failed: ${err.message||'Unknown error'}</div>`;
+              renderApplicantTable([]);
+            })
+            .getSheetData(branch);
+        } else {
+          statusDiv.innerHTML = `<div class="flex items-center text-amber-600"><i class="fas fa-exclamation-triangle mr-2"></i>Apps Script not detected — deploy as a web app</div>`;
+          renderApplicantTable([]);
+        }
+      }
+      window.loadData = loadData;
+
+      function statusColor(s) {
+        s = (s||'').toLowerCase();
+        if (s.includes('approved'))    return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        if (s.includes('disapproved')) return 'bg-red-100 text-red-800 border border-red-200';
+        if (s.includes('cancelled'))   return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+        if (s.includes('rejected'))    return 'bg-orange-100 text-orange-800 border border-orange-200';
+        return 'bg-gray-100 text-gray-800';
+      }
+
+      /* ── PAGINATION STATE ─────────────────────────────────────────────────
+         filteredRows = the rows after applying filters (or all rows if none).
+         currentPage  = which page the user is viewing (1-indexed).
+         renderApplicantTable() updates filteredRows, then drawPage() slices
+         out PAGE_SIZE rows for the current page and paints them. The View
+         and Print buttons use the absolute index in sheetData (sheetIdx)
+         so they still work correctly across pages and filters.
+      ── */
+      const casPageState = { filteredRows: [], currentPage: 1 };
+
+      function renderApplicantTable(rows) {
+        casPageState.filteredRows = rows || [];
+        casPageState.currentPage  = 1;   // any new filter/load resets to page 1
+        drawCASPage();
+      }
+
+      function drawCASPage() {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const rows = casPageState.filteredRows;
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-12 text-center"><div class="flex flex-col items-center text-gray-500"><i class="fas fa-database text-gray-300 text-4xl mb-3"></i><p class="font-medium">No CAS data for this branch</p></div></td></tr>`;
+          window.renderPagination(casPageState, 'casPaginationControls', 'casPaginationInfo', 'casPaginationBar', drawCASPage);
+          return;
+        }
+
+        const pageRows = window.paginateRows(rows, casPageState.currentPage);
+
+        pageRows.forEach(app => {
+          // sheetIdx = absolute index in the original sheetData (not the page slice)
+          // so View/Print buttons stay correct after filtering or paging.
+          const sheetIdx = sheetData.indexOf(app);
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-50 transition-colors duration-150';
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(app.aid)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(app.storeBranch)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(app.storeArea)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${esc(app.applicantName)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(app.alias)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(app.applicant)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(app.typeOfApplicant)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span class="px-2.5 py-1.5 inline-flex text-xs font-semibold rounded-full ${statusColor(app.applicantStatus)} shadow-sm">${esc(app.applicantStatus)}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onclick="window.viewApplicant(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition mr-1 border border-indigo-200"><i class="fas fa-eye mr-1.5 text-xs"></i>View</button>
+              <button onclick="window.printApplicantPDF(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-md transition border border-gray-200"><i class="fas fa-file-pdf mr-1.5 text-xs"></i>Print</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        window.renderPagination(casPageState, 'casPaginationControls', 'casPaginationInfo', 'casPaginationBar', drawCASPage);
+      }
+
+      const CAS_FILTER_FIELDS = [
+        { inputId: 'casFilterAID',       dataKey: 'aid'            },
+        { inputId: 'casFilterName',      dataKey: 'applicantName'  },
+        { inputId: 'casFilterStatus',    dataKey: 'applicantStatus'},
+        { inputId: 'casFilterArea',      dataKey: 'area'           },
+        { inputId: 'casFilterCollector', dataKey: 'collector'      }
+      ];
+
+      function buildCASPredicate() {
+        const active = CAS_FILTER_FIELDS
+          .map(f => { const el = document.getElementById(f.inputId); const v = el ? el.value.trim().toLowerCase() : ''; return v ? {key: f.dataKey, v} : null; })
+          .filter(Boolean);
+        // Region / Branch are exact-match on storeBranch, so they come from
+        // the shared module rather than the substring fields above.
+        const scope = window.branchFilters.predicate('cas');
+        if (!active.length && !scope) return null;
+        return row => (!scope || scope(row)) && active.every(f => (row[f.key]||'').toString().toLowerCase().includes(f.v));
+      }
+
+      window.applyCASFilters = function() {
+        const pred = buildCASPredicate();
+        renderApplicantTable(pred ? sheetData.filter(pred) : sheetData);
+      };
+
+      window.clearCASFilters = function() {
+        CAS_FILTER_FIELDS.forEach(f => { const el = document.getElementById(f.inputId); if (el) el.value = ''; });
+        window.branchFilters.clear('cas');
+        renderApplicantTable(sheetData);
+      };
+
+      window.searchCASTable = window.applyCASFilters;
+
+      const modal = document.getElementById('applicantModal');
+      window.viewApplicant = function(i) {
+        const app = sheetData[i]; if (!app) return;
+        window._currentCASIndex = i;
+        [
+          ['modalAID', app.aid], ['modalApplicantName', app.applicantName],
+          ['modalAlias', app.alias], ['modalApplicantField', app.applicant],
+          ['modalType', app.typeOfApplicant], ['modalStatus', app.applicantStatus],
+          ['modalName', app.applicantName], ['modalPhone', app.maker_CellNo || 'Not provided'],
+          ['modalBranch', app.storeBranch || window._userBranch || '—'],
+          ['modalNotes', app.notes || 'No additional notes'],
+        ].forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.innerText = v||'-'; });
+        const pos = document.getElementById('modalPosition');
+        if (pos) pos.innerText = `${app.typeOfApplicant||'Applicant Type'} · ${app.alias||'Alias'}`;
+        modal.classList.remove('hidden'); document.body.style.overflow='hidden';
+      };
+
+      function closeCASModal() { modal.classList.add('hidden'); document.body.style.overflow=''; }
+      document.getElementById('closeModalBtn')?.addEventListener('click', closeCASModal);
+      document.getElementById('closeBtnInner')?.addEventListener('click', closeCASModal);
+      document.getElementById('modalBackdrop')?.addEventListener('click', closeCASModal);
+      window.addEventListener('keydown', e => { if(e.key==='Escape'&&modal&&!modal.classList.contains('hidden')) closeCASModal(); });
+
+      document.getElementById('printFromModalBtn')?.addEventListener('click', () => {
+        if (window._currentCASIndex !== undefined) window.printApplicantPDF(window._currentCASIndex);
+      });
+
+      window.printApplicantPDF = function(i) {
+        const app = sheetData[i]; if (!app) { alert('No applicant selected'); return; }
+        google.script.run
+          .withSuccessHandler(html => { const pw=window.open('','_blank','width=850,height=1100,scrollbars=yes'); pw.document.open(); pw.document.write(html); pw.document.close(); pw.onload=()=>setTimeout(()=>{pw.focus();pw.print();},800); })
+          .getCasApplicationForm(app);
+      };
+    })();
+  </script>
+
+  <!-- ==================== CIR TABLE SCRIPT ==================== -->
+  <script>
+    (function () {
+      'use strict';
+      const tbody     = document.getElementById('cirTableBody');
+      const statusDiv = document.getElementById('cirTableStatus');
+      let sheetData   = [];
+      let loadingStart = null;
+
+      function fmt(d) { return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+      function esc(t) {
+        if (!t && t !== 0) return '-';
+        const s = t.toString(); if (!s.trim()) return '-';
+        const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+      }
+
+      function loadCIRData() {
+        // Session check: bail and bounce to login if expired
+        if (!window.requireSession()) return;
+
+        const branch = window._userBranch || 'ALL';
+        loadingStart = new Date();
+        if (statusDiv) statusDiv.innerHTML = `<div class="flex items-center"><i class="fas fa-spinner animate-spin mr-2 text-indigo-500"></i><span>Loading CIR data for branch: <strong>${branch === 'ALL' ? 'All Branches' : branch}</strong>…</span></div>`;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(data) {
+              const t = ((new Date()-loadingStart)/1000).toFixed(2);
+              sheetData = Array.isArray(data) ? data : [];
+              statusDiv.innerHTML = sheetData.length === 0
+                ? `<div class="flex items-center text-amber-600"><i class="fas fa-info-circle mr-2"></i>No CIR records found for branch: <strong class="ml-1">${branch === 'ALL' ? 'All Branches' : branch}</strong></div>`
+                : `<div class="flex items-center justify-between w-full"><div class="flex items-center text-emerald-600"><i class="fas fa-check-circle mr-2 text-emerald-500"></i><span class="font-medium">${sheetData.length}</span><span class="ml-1">entries</span><span class="ml-2 text-xs text-slate-400">· ${branch === 'ALL' ? 'All Branches' : branch}</span></div><div class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i>${fmt(new Date())} · <i class="fas fa-bolt mr-1"></i>${t}s</div></div>`;
+              window.branchFilters.populate('cir', sheetData);
+              renderCIRTable(sheetData);
+            })
+            .withFailureHandler(function(err) {
+              statusDiv.innerHTML = `<div class="flex items-center text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Failed: ${err.message||'Unknown error'}</div>`;
+              renderCIRTable([]);
+            })
+            .getCIRData(branch);
+        } else {
+          statusDiv.innerHTML = `<div class="flex items-center text-amber-600"><i class="fas fa-exclamation-triangle mr-2"></i>Apps Script not detected — deploy as a web app</div>`;
+          renderCIRTable([]);
+        }
+      }
+      window.loadCIRData = loadCIRData;
+
+      function statusColor(s) {
+        s = (s||'').toLowerCase();
+        if (s.includes('approved'))    return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        if (s.includes('disapproved')) return 'bg-red-100 text-red-800 border border-red-200';
+        if (s.includes('cancelled'))   return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+        if (s.includes('rejected'))    return 'bg-orange-100 text-orange-800 border border-orange-200';
+        return 'bg-gray-100 text-gray-800';
+      }
+
+      /* ── PAGINATION STATE (same pattern as CAS) ──────────────────────── */
+      const cirPageState = { filteredRows: [], currentPage: 1 };
+
+      function renderCIRTable(rows) {
+        cirPageState.filteredRows = rows || [];
+        cirPageState.currentPage  = 1;
+        drawCIRPage();
+      }
+
+      function drawCIRPage() {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const rows = cirPageState.filteredRows;
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-12 text-center"><div class="flex flex-col items-center text-gray-500"><i class="fas fa-database text-gray-300 text-4xl mb-3"></i><p class="font-medium">No CIR data for this branch</p></div></td></tr>`;
+          window.renderPagination(cirPageState, 'cirPaginationControls', 'cirPaginationInfo', 'cirPaginationBar', drawCIRPage);
+          return;
+        }
+
+        const pageRows = window.paginateRows(rows, cirPageState.currentPage);
+
+        pageRows.forEach(cir => {
+          const sheetIdx = sheetData.indexOf(cir);
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-50 transition-colors duration-150';
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cir.cid)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cir.storeBranch)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cir.storeArea)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${esc(cir.applicantName)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(cir.alias)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(cir.applicant)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(cir.typeOfApplicant)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span class="px-2.5 py-1.5 inline-flex text-xs font-semibold rounded-full ${statusColor(cir.applicantStatus)} shadow-sm">${esc(cir.applicantStatus)}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onclick="window.viewCIR(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition mr-1 border border-indigo-200"><i class="fas fa-eye mr-1.5 text-xs"></i>View</button>
+              <button onclick="window.printCIRPDF(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-md transition border border-gray-200"><i class="fas fa-file-pdf mr-1.5 text-xs"></i>Print</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        window.renderPagination(cirPageState, 'cirPaginationControls', 'cirPaginationInfo', 'cirPaginationBar', drawCIRPage);
+      }
+
+      const CIR_FILTER_FIELDS = [
+        { inputId: 'cirFilterCID',       dataKey: 'cid'            },
+        { inputId: 'cirFilterName',      dataKey: 'applicantName'  },
+        { inputId: 'cirFilterStatus',    dataKey: 'applicantStatus'},
+        { inputId: 'cirFilterArea',      dataKey: 'area'           },
+        { inputId: 'cirFilterCollector', dataKey: 'collector'      }
+      ];
+
+      function buildCIRPredicate() {
+        const active = CIR_FILTER_FIELDS
+          .map(f => { const el=document.getElementById(f.inputId); const v=el?el.value.trim().toLowerCase():''; return v?{key:f.dataKey,v}:null; })
+          .filter(Boolean);
+        const scope = window.branchFilters.predicate('cir');
+        if (!active.length && !scope) return null;
+        return row => (!scope || scope(row)) && active.every(f => (row[f.key]||'').toString().toLowerCase().includes(f.v));
+      }
+
+      window.applyCIRFilters = function() {
+        const pred = buildCIRPredicate();
+        renderCIRTable(pred ? sheetData.filter(pred) : sheetData);
+      };
+
+      window.clearCIRFilters = function() {
+        CIR_FILTER_FIELDS.forEach(f => { const el=document.getElementById(f.inputId); if(el) el.value=''; });
+        window.branchFilters.clear('cir');
+        renderCIRTable(sheetData);
+      };
+
+      window.searchCIRTable = window.applyCIRFilters;
+
+      const modal = document.getElementById('cirModal');
+      window.viewCIR = function(i) {
+        const cir = sheetData[i]; if (!cir) return;
+        [
+          ['modalCID', cir.cid], ['modalCirApplicantName', cir.applicantName],
+          ['modalCirAlias', cir.alias], ['modalCirApplicantField', cir.applicant],
+          ['modalCirTypeOfApplicant', cir.typeOfApplicant], ['modalCirStatus', cir.applicantStatus],
+          ['modalCirName', cir.applicantName], ['modalCirPhone', cir.cir_PhoneNo || 'Not provided'],
+          ['modalCirBranch', cir.storeBranch || window._userBranch || '—'],
+          ['modalCirReason', cir.cirReason || 'No findings available'],
+        ].forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.innerText=v||'-'; });
+        const pos = document.getElementById('cirModalPosition');
+        if (pos) pos.innerText = `${cir.typeOfApplicant||'Applicant Type'} • ${cir.alias||'Alias'}`;
+        modal.classList.remove('hidden'); document.body.style.overflow='hidden';
+      };
+
+      function closeCIRModal() { modal.classList.add('hidden'); document.body.style.overflow=''; }
+      document.getElementById('closeCIRModalBtn')?.addEventListener('click', closeCIRModal);
+      document.getElementById('closeCIRBtnInner')?.addEventListener('click', closeCIRModal);
+      document.getElementById('cirModalBackdrop')?.addEventListener('click', closeCIRModal);
+      window.addEventListener('keydown', e => { if(e.key==='Escape'&&modal&&!modal.classList.contains('hidden')) closeCIRModal(); });
+
+      window.printCIRPDF = function(i) {
+        const cir = sheetData[i]; if (!cir) { alert('No CIR selected'); return; }
+        google.script.run
+          .withSuccessHandler(html => { const pw=window.open('','_blank','width=850,height=1100,scrollbars=yes'); pw.document.open(); pw.document.write(html); pw.document.close(); pw.onload=()=>setTimeout(()=>{pw.focus();pw.print();},800); })
+          .getCIRForm(cir);
+      };
+    })();
+  </script>
+
+  <!-- ==================== CASH TABLE SCRIPT ==================== -->
+  <script>
+    (function () {
+      'use strict';
+      const tbody     = document.getElementById('cashTableBody');
+      const statusDiv = document.getElementById('cashTableStatus');
+      let sheetData   = [];
+      let loadingStart = null;
+
+      function fmt(d) { return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+      function esc(t) {
+        if (!t && t !== 0) return '-';
+        const s = t.toString(); if (!s.trim()) return '-';
+        const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+      }
+
+      /* ── loadCashData(branch) ─────────────────────────────────────────────
+         Same pattern as CAS/CIR — passes the user's branch to the back-end
+         which filters on "Store Branch:" before sending rows over the wire.
+      ── */
+      function loadCashData() {
+        // Session check: bail and bounce to login if expired
+        if (!window.requireSession()) return;
+        
+        const branch = window._userBranch || 'ALL';
+        loadingStart = new Date();
+        if (statusDiv) statusDiv.innerHTML = `<div class="flex items-center"><i class="fas fa-spinner animate-spin mr-2 text-indigo-500"></i><span>Loading Cash Sales for branch: <strong>${branch === 'ALL' ? 'All Branches' : branch}</strong>…</span></div>`;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(data) {
+              const t = ((new Date()-loadingStart)/1000).toFixed(2);
+              sheetData = Array.isArray(data) ? data : [];
+              statusDiv.innerHTML = sheetData.length === 0
+                ? `<div class="flex items-center text-amber-600"><i class="fas fa-info-circle mr-2"></i>No Cash Sales records found for branch: <strong class="ml-1">${branch === 'ALL' ? 'All Branches' : branch}</strong></div>`
+                : `<div class="flex items-center justify-between w-full"><div class="flex items-center text-emerald-600"><i class="fas fa-check-circle mr-2 text-emerald-500"></i><span class="font-medium">${sheetData.length}</span><span class="ml-1">entries</span><span class="ml-2 text-xs text-slate-400">· ${branch === 'ALL' ? 'All Branches' : branch}</span></div><div class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i>${fmt(new Date())} · <i class="fas fa-bolt mr-1"></i>${t}s</div></div>`;
+              window.branchFilters.populate('cash', sheetData);
+              renderCashTable(sheetData);
+            })
+            .withFailureHandler(function(err) {
+              statusDiv.innerHTML = `<div class="flex items-center text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Failed: ${err.message||'Unknown error'}</div>`;
+              renderCashTable([]);
+            })
+            .getCashData(branch);   // ← branch passed to back-end
+        } else {
+          statusDiv.innerHTML = `<div class="flex items-center text-amber-600"><i class="fas fa-exclamation-triangle mr-2"></i>Apps Script not detected — deploy as a web app</div>`;
+          renderCashTable([]);
+        }
+      }
+      window.loadCashData = loadCashData;
+
+      function salesTypeColor(s) {
+        s = (s||'').toLowerCase();
+        if (s.includes('brand'))  return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+        if (s.includes('repo'))   return 'bg-orange-100 text-orange-800 border border-orange-200';
+        return 'bg-gray-100 text-gray-800';
+      }
+
+      /* ── PAGINATION STATE (same pattern as CAS / CIR) ──────────────────── */
+      const cashPageState = { filteredRows: [], currentPage: 1 };
+
+      function renderCashTable(rows) {
+        cashPageState.filteredRows = rows || [];
+        cashPageState.currentPage  = 1;
+        drawCashPage();
+      }
+
+      function drawCashPage() {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const rows = cashPageState.filteredRows;
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-12 text-center"><div class="flex flex-col items-center text-gray-500"><i class="fas fa-database text-gray-300 text-4xl mb-3"></i><p class="font-medium">No Cash Sales for this branch</p></div></td></tr>`;
+          window.renderPagination(cashPageState, 'cashPaginationControls', 'cashPaginationInfo', 'cashPaginationBar', drawCashPage);
+          return;
+        }
+
+        const pageRows = window.paginateRows(rows, cashPageState.currentPage);
+
+        pageRows.forEach(cash => {
+          const sheetIdx = sheetData.indexOf(cash);
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-50 transition-colors duration-150';
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cash.csid)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cash.storeBranch)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${esc(cash.storeArea)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${esc(cash.buyerName)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span class="px-2.5 py-1.5 inline-flex text-xs font-semibold rounded-full ${salesTypeColor(cash.salesType)} shadow-sm">${esc(cash.salesType)}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(cash.contact)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${esc(cash.email)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onclick="window.viewCash(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition mr-1 border border-indigo-200"><i class="fas fa-eye mr-1.5 text-xs"></i>View</button>
+              <button onclick="window.printCashPDF(${sheetIdx})" class="inline-flex items-center px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-md transition border border-gray-200"><i class="fas fa-file-pdf mr-1.5 text-xs"></i>Print</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+
+        window.renderPagination(cashPageState, 'cashPaginationControls', 'cashPaginationInfo', 'cashPaginationBar', drawCashPage);
+      }
+
+      /* ── CASH FILTER ENGINE ───────────────────────────────────────────────
+         Same scalable pattern as CAS / CIR.
+         Add an entry here + a matching <input>/<select> id to extend.
+      ── */
+      const CASH_FILTER_FIELDS = [
+        { inputId: 'cashFilterCSID',      dataKey: 'csid'      },
+        { inputId: 'cashFilterBuyer',     dataKey: 'buyerName' },
+        { inputId: 'cashFilterSalesType', dataKey: 'salesType' },
+        { inputId: 'cashFilterCollector', dataKey: 'collector' }
+      ];
+
+      function buildCashPredicate() {
+        const active = CASH_FILTER_FIELDS
+          .map(f => { const el = document.getElementById(f.inputId); const v = el ? el.value.trim().toLowerCase() : ''; return v ? { key: f.dataKey, v } : null; })
+          .filter(Boolean);
+        const scope = window.branchFilters.predicate('cash');
+        if (!active.length && !scope) return null;
+        return row => (!scope || scope(row)) && active.every(f => (row[f.key] || '').toString().toLowerCase().includes(f.v));
+      }
+
+      window.applyCashFilters = function() {
+        const pred = buildCashPredicate();
+        renderCashTable(pred ? sheetData.filter(pred) : sheetData);
+      };
+
+      window.clearCashFilters = function() {
+        CASH_FILTER_FIELDS.forEach(f => { const el = document.getElementById(f.inputId); if (el) el.value = ''; });
+        window.branchFilters.clear('cash');
+        renderCashTable(sheetData);
+      };
+
+      // Modal
+      const modal = document.getElementById('cashModal');
+      window.viewCash = function(i) {
+        const cash = sheetData[i]; if (!cash) return;
+        window._currentCashIndex = i;
+        [
+          ['modalCashCSID',      cash.csid],
+          ['modalCashBuyer',     cash.buyerName],
+          ['modalCashSalesType', cash.salesType],
+          ['modalCashContact',   cash.contact || 'Not provided'],
+          ['modalCashEmail',     cash.email   || 'Not provided'],
+          ['modalCashBranch',    cash.storeBranch || window._userBranch || '—'],
+        ].forEach(([id,v]) => { const el = document.getElementById(id); if (el) el.innerText = v || '-'; });
+
+        const nameEl = document.getElementById('modalCashName');
+        if (nameEl) nameEl.innerText = cash.buyerName || 'Cash Sale';
+        const pos = document.getElementById('cashModalPosition');
+        if (pos) pos.innerText = `${cash.salesType || 'Sale'} · ${cash.csid || ''}`;
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      };
+
+      function closeCashModal() { modal.classList.add('hidden'); document.body.style.overflow = ''; }
+      document.getElementById('closeCashModalBtn')?.addEventListener('click', closeCashModal);
+      document.getElementById('closeCashBtnInner')?.addEventListener('click', closeCashModal);
+      document.getElementById('cashModalBackdrop')?.addEventListener('click', closeCashModal);
+      window.addEventListener('keydown', e => { if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeCashModal(); });
+
+      document.getElementById('printCashFromModalBtn')?.addEventListener('click', () => {
+        if (window._currentCashIndex !== undefined) window.printCashPDF(window._currentCashIndex);
+      });
+
+      window.printCashPDF = function(i) {
+        const cash = sheetData[i];
+        if (!cash) { alert('No Cash Sale selected'); return; }
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          alert('Apps Script not detected'); return;
+        }
+        google.script.run
+          .withSuccessHandler(html => {
+            const pw = window.open('', '_blank', 'width=850,height=1100,scrollbars=yes');
+            pw.document.open(); pw.document.write(html); pw.document.close();
+            pw.onload = () => setTimeout(() => { pw.focus(); pw.print(); }, 800);
+          })
+          .withFailureHandler(err => {
+            alert('PDF generation failed: ' + (err.message || 'CashSalesFormTemplate may not exist yet'));
+          })
+          .getCashSalesForm(cash);
+      };
+    })();
+  </script>
+

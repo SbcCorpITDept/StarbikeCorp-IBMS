@@ -1,4 +1,4 @@
-// MCSales.js - Motorcycle unit releases and sale transactions.
+// Sales.js - Motorcycle unit releases and sale transactions.
 // Apps Script server files share one global scope; no imports are required.
 
 // ── Sales (Unit Releases) ───────────────────────────────────────────────────

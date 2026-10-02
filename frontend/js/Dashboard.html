@@ -1,0 +1,263 @@
+  <!-- ==================== DASHBOARD SCRIPT ====================
+       Insight-first, branch-scoped dashboard. Single entry point:
+       loadStats(branch) — orchestrates all back-end calls and updates the UI.
+
+       State:
+         dashState.currentBranch — currently displayed branch (string or 'ALL')
+         dashState.trendRange    — 7, 30, or 90 (days)
+         dashState.trendChart    — Chart.js instance (destroyed/rebuilt on update)
+  -->
+  <script>
+    const dashState = {
+      currentBranch: null,
+      trendRange:    30,
+      trendChart:    null,
+      cashDonut:     null,     // Chart.js instance for the cash breakdown donut
+      branchesLoaded: false
+    };
+
+    /* Format a number as Philippine peso. 1234567 → "₱1,234,567" */
+    function formatPeso(n) {
+      const num = Math.round(Number(n) || 0);
+      return '₱' + num.toLocaleString('en-PH');
+    }
+
+    /* loadStats — called on login, on page show, and after branch/range change.
+       Optional `branch` arg overrides the user's home branch (for the dropdown).
+    */
+    function loadStats(branch) {
+      if (!window.requireSession()) return;
+      if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+
+      const b = branch || dashState.currentBranch || window._userBranch || 'ALL';
+      dashState.currentBranch = b;
+
+      if (!dashState.branchesLoaded) {
+        google.script.run.withSuccessHandler(populateBranchDropdown).getAvailableBranches();
+        dashState.branchesLoaded = true;
+      }
+
+      google.script.run.withSuccessHandler(updateDashboard)
+        .withFailureHandler(err => console.error('Dashboard error', err))
+        .getDashboardStats(b);
+
+      google.script.run.withSuccessHandler(updateCASBreakdown)
+        .withFailureHandler(err => console.error('CAS breakdown error', err))
+        .getCASBreakdown(b);
+
+      google.script.run.withSuccessHandler(updateCIRBreakdown)
+        .withFailureHandler(err => console.error('CIR breakdown error', err))
+        .getCIRBreakdown(b);
+
+      google.script.run.withSuccessHandler(updateNeedsAttention)
+        .withFailureHandler(err => console.error('Needs attention error', err))
+        .getNeedsAttention(b);
+
+      google.script.run.withSuccessHandler(updateActivityTrend)
+        .withFailureHandler(err => console.error('Activity trend error', err))
+        .getActivityTrend(b, dashState.trendRange);
+
+      google.script.run.withSuccessHandler(updateCashBreakdown)
+        .withFailureHandler(err => console.error('Cash breakdown error', err))
+        .getCashBreakdown(b, dashState.trendRange);
+    }
+    window.loadStats = loadStats;
+
+    function populateBranchDropdown(branches) {
+      const sel = document.getElementById('dashBranchFilter');
+      if (!sel) return;
+      const home = window._userBranch || 'ALL';
+
+      sel.innerHTML = '';
+      const addOpt = (val, label, selected) => {
+        const o = document.createElement('option');
+        o.value = val; o.textContent = label;
+        if (selected) o.selected = true;
+        sel.appendChild(o);
+      };
+
+      if (home === 'ALL') {
+        addOpt('ALL', 'All Branches', dashState.currentBranch === 'ALL');
+      } else {
+        addOpt(home, home + ' (your branch)', dashState.currentBranch === home);
+        addOpt('ALL', 'All Branches', dashState.currentBranch === 'ALL');
+      }
+      (branches || []).filter(b => b !== home).forEach(b => {
+        addOpt(b, b, dashState.currentBranch === b);
+      });
+
+      sel.onchange = () => loadStats(sel.value);
+    }
+
+    function updateDashboard(stats) {
+      document.getElementById('cas-total').textContent       = stats.casTotal  || 0;
+      document.getElementById('cir-total').textContent       = stats.cirTotal  || 0;
+      document.getElementById('cashsales-total').textContent = stats.cashTotal || 0;
+      const label = (stats.branch === 'ALL') ? 'all branches' : stats.branch;
+      ['cas-delta','cir-delta','cash-delta'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '· ' + label;
+      });
+    }
+
+    function updateCASBreakdown(stats) {
+      document.getElementById('cas-review').textContent      = stats.forReview   || 0;
+      document.getElementById('cas-approved').textContent    = stats.approved    || 0;
+      document.getElementById('cas-disapproved').textContent = stats.disApproved || 0;
+      document.getElementById('cas-rejected').textContent    = stats.rejected    || 0;
+      document.getElementById('cas-cancelled').textContent   = stats.cancelled   || 0;
+    }
+
+    function updateCIRBreakdown(stats) {
+      document.getElementById('cir-forApproval').textContent = stats.forApproval || 0;
+      document.getElementById('cir-approved').textContent    = stats.approved    || 0;
+      document.getElementById('cir-disapproved').textContent = stats.disApproved || 0;
+      document.getElementById('cir-rejected').textContent    = stats.rejected    || 0;
+      document.getElementById('cir-cancelled').textContent   = stats.cancelled   || 0;
+    }
+
+    function updateNeedsAttention(data) {
+      document.getElementById('att-cas-pending').textContent = data.casPending || 0;
+      document.getElementById('att-cir-pending').textContent = data.cirPending || 0;
+      document.getElementById('att-stale').textContent       = data.staleApps  || 0;
+      const lbl = document.getElementById('att-stale-label');
+      if (lbl) lbl.textContent = '> ' + (data.staleDays || 30) + ' days';
+    }
+
+    /* Cash Sales revenue breakdown — updates totals, per-type rows, and the donut.
+       Receives { brandNew:{count,revenue}, repo:{count,revenue}, total, avgSale, days } */
+    function updateCashBreakdown(data) {
+      const bn    = data.brandNew || { count: 0, revenue: 0 };
+      const repo  = data.repo     || { count: 0, revenue: 0 };
+      const total = data.total    || { count: 0, revenue: 0 };
+
+      // Range label (matches the chart toggle)
+      const rangeLbl = document.getElementById('cash-range-label');
+      if (rangeLbl) rangeLbl.textContent = 'Last ' + (data.days || 30) + ' days';
+
+      // Headline numbers
+      document.getElementById('cash-total-revenue').textContent = formatPeso(total.revenue);
+      document.getElementById('cash-avg-sale').textContent      = formatPeso(data.avgSale || 0);
+      document.getElementById('cash-donut-count').textContent   = total.count;
+
+      // Per-type cards
+      document.getElementById('cash-bn-revenue').textContent   = formatPeso(bn.revenue);
+      document.getElementById('cash-bn-count').textContent     = bn.count + ' sale' + (bn.count === 1 ? '' : 's');
+      document.getElementById('cash-repo-revenue').textContent = formatPeso(repo.revenue);
+      document.getElementById('cash-repo-count').textContent   = repo.count + ' sale' + (repo.count === 1 ? '' : 's');
+
+      // Percentages (guard against divide-by-zero — display 0% when no sales)
+      const pct = (part) => total.count > 0 ? Math.round((part / total.count) * 100) : 0;
+      document.getElementById('cash-bn-pct').textContent   = pct(bn.count) + '%';
+      document.getElementById('cash-repo-pct').textContent = pct(repo.count) + '%';
+
+      // Donut chart — rebuilt on every update
+      const ctx = document.getElementById('cashDonutChart');
+      if (!ctx) return;
+      if (dashState.cashDonut) dashState.cashDonut.destroy();
+
+      // If there are zero sales, show a single muted ring so the canvas isn't empty
+      const hasData = total.count > 0;
+      dashState.cashDonut = new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: hasData ? ['Brand New', 'Repo'] : ['No sales in range'],
+          datasets: [{
+            data:            hasData ? [bn.count, repo.count] : [1],
+            backgroundColor: hasData ? ['#334155', '#cbd5e1'] : ['#f1f5f9'],
+            borderWidth:     0,
+            hoverOffset:     hasData ? 6 : 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend:  { display: false },
+            tooltip: {
+              enabled: hasData,
+              backgroundColor: '#1e293b',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed;
+                  const p = total.count > 0 ? Math.round((v / total.count) * 100) : 0;
+                  return ` ${ctx.label}: ${v} (${p}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* dashJumpTo — clicked on a Needs-Attention card. Switches to the
+       relevant table page and pre-fills the status filter. */
+    window.dashJumpTo = function(which, statusValue) {
+      const map = {
+        cas:  { page: 'casTablePage',  filterId: 'casFilterStatus',  applyFn: 'applyCASFilters'  },
+        cir:  { page: 'cirTablePage',  filterId: 'cirFilterStatus',  applyFn: 'applyCIRFilters'  },
+        cash: { page: 'cashTablePage', filterId: 'cashFilterStatus', applyFn: 'applyCashFilters' }
+      };
+      const cfg = map[which];
+      if (!cfg) return;
+      showPage(cfg.page);
+      setTimeout(() => {
+        const sel = document.getElementById(cfg.filterId);
+        if (sel) {
+          sel.value = statusValue || '';
+          if (typeof window[cfg.applyFn] === 'function') window[cfg.applyFn]();
+        }
+      }, 2000);
+    };
+
+    function updateActivityTrend(data) {
+      const ctx = document.getElementById('activityTrendChart');
+      if (!ctx) return;
+      const gctx = ctx.getContext('2d');
+
+
+      if (dashState.trendChart) dashState.trendChart.destroy();
+
+      dashState.trendChart = new Chart(gctx, {
+        type: 'line',
+        data: {
+          labels: data.labels || [],
+          datasets: [
+            { label: 'CAS',  data: data.cas  || [], borderColor: '#334155', backgroundColor: '#334155', borderWidth: 2,    tension: 0.3, fill: false, pointRadius: 0, pointHoverRadius: 4 },
+            { label: 'CIR',  data: data.cir  || [], borderColor: '#94a3b8', backgroundColor: '#94a3b8', borderWidth: 1.75, tension: 0.3, fill: false, pointRadius: 0, pointHoverRadius: 4 },
+            { label: 'Cash', data: data.cash || [], borderColor: '#94a3b8', backgroundColor: '#94a3b8', borderWidth: 1.75, tension: 0.3, fill: false, pointRadius: 0, pointHoverRadius: 4, borderDash: [4, 4] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend:  { position: 'bottom', labels: { boxWidth: 16, boxHeight: 2, padding: 16, color: '#64748b', font: { size: 11 } } },
+            tooltip: { backgroundColor: '#1e293b', padding: 12, cornerRadius: 8, titleFont: { size: 12, weight: 'bold' }, bodyFont: { size: 12 } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+            y: { grid: { color: '#f1f5f9', drawBorder: false }, ticks: { color: '#94a3b8', font: { size: 10 }, padding: 8, precision: 0 }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    /* Range toggle (7/30/90) — wire once on DOM ready */
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('trendRangeToggle');
+      if (!toggle) return;
+      toggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn) return;
+        toggle.querySelectorAll('button').forEach(b => b.classList.remove('trend-range-active'));
+        btn.classList.add('trend-range-active');
+        dashState.trendRange = parseInt(btn.getAttribute('data-range'), 10);
+        loadStats();
+      });
+    });
+  </script>
+

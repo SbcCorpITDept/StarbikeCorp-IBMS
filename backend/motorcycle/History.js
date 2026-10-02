@@ -1,4 +1,4 @@
-// MCHistory.js - Per-unit movement history and filtered branch movement trail.
+// History.js - Per-unit movement history and filtered branch movement trail.
 // Apps Script server files share one global scope; no imports are required.
 
 function getMCHistory(mcid) {

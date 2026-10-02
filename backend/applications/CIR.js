@@ -1,4 +1,4 @@
-// ApplicationsCIR.js - Credit investigation records and report template rendering.
+// CIR.js - Credit investigation records and report template rendering.
 // Apps Script server files share one global scope; no imports are required.
 
 // =============================================
@@ -312,7 +312,7 @@ function getCIRData(branch) {
 // CIR — render PDF template
 // =============================================
 function getCIRForm(cir) {
-  const template = HtmlService.createTemplateFromFile('CIRFormTemplate');
+  const template = HtmlService.createTemplateFromFile('frontend/print/CIRForm');
   template.cir = cir;
   return template.evaluate().getContent();
 }

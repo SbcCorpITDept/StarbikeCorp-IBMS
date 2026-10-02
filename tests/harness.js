@@ -82,6 +82,14 @@ function formatShanghai(d, fmt) {
 // assert.deepStrictEqual compares plain data.
 function plain(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
 
+// Every backend/**/*.js file, sorted by path (Apps Script shares one global scope).
+function serverFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? serverFiles(p) : (e.name.endsWith('.js') ? [p] : []);
+  }).sort();
+}
+
 function loadApp(data) {
   data = data || {};
   let uuidSeq = 0;
@@ -126,11 +134,30 @@ function loadApp(data) {
         if (!books[id]) throw new Error('Unknown spreadsheet: ' + id);
         return books[id];
       }
-    }
+    },
+    HtmlService: {
+      XFrameOptionsMode: { ALLOWALL: 'ALLOWALL' },
+      createHtmlOutputFromFile: name => {
+        const content = fs.readFileSync(path.join(ROOT, name + '.html'), 'utf8');
+        return { getContent: () => content };
+      },
+      createTemplateFromFile: name => {
+        const content = fs.readFileSync(path.join(ROOT, name + '.html'), 'utf8');
+        return {
+          evaluate: () => {
+            const out = {
+              setTitle: () => out, setXFrameOptionsMode: () => out, addMetaTag: () => out,
+              getContent: () => content
+            };
+            return out;
+          }
+        };
+      }
+    },
   };
   vm.createContext(context);
-  fs.readdirSync(ROOT).filter(f => f.endsWith('.js')).sort().forEach(f => {
-    vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), context, { filename: f });
+  serverFiles(path.join(ROOT, 'backend')).forEach(f => {
+    vm.runInContext(fs.readFileSync(f, 'utf8'), context, { filename: path.relative(ROOT, f) });
   });
 
   const ids = vm.runInContext('({ main: spreadsheetId, users: userSheetId, mc: MC_INVENTORY_SPREADSHEET_ID })', context);

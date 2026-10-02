@@ -1,4 +1,4 @@
-// MCTransactions.js - Shared transaction writer and receiving-report compatibility wrapper.
+// Transactions.js - Shared transaction writer and receiving-report compatibility wrapper.
 // Apps Script server files share one global scope; no imports are required.
 
 /**

@@ -1,0 +1,229 @@
+    <!-- SALES — LIST (Unit Releases: 1 sale = 1 customer = 1 motorcycle) -->
+    <div id="salesPage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div class="mb-6 flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">Unit Releases (Sales)</h1>
+            <p class="text-sm text-slate-500">Motorcycles released to customers</p>
+          </div>
+          <button onclick="openCreateSale()" class="inline-flex items-center gap-2 rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Unit Release
+          </button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm mb-4">
+          <div class="relative max-w-md">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="salesSearch" type="text" placeholder="Search sale no, SI, customer, account or engine…" class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm" oninput="applySalesSearch()" />
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Sale No.</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Customer</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Account No.</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No.</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Branch</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody id="salesBody" class="bg-white divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="salesStatus" class="text-sm text-slate-500 px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center">
+            <i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Loading sales…
+          </div>
+          <div id="salePaginationBar" class="pagination-bar hidden">
+            <div id="salePaginationInfo" class="pagination-info"></div>
+            <div id="salePaginationControls" class="pagination-controls"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+
+    <!-- CREATE UNIT RELEASE — step 1: select motorcycle, step 2: release form -->
+    <div id="createSalePage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <button onclick="showPage('salesPage', null)" class="mb-4 text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sales
+        </button>
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-slate-800">New Unit Release</h1>
+          <p id="urStepLabel" class="text-sm text-slate-500">Step 1 of 2 — Select an available motorcycle</p>
+        </div>
+
+        <!-- STEP 1 — SELECT MOTORCYCLE -->
+        <div id="urStep1">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <h4 class="text-sm font-bold text-slate-900">Available Motorcycles</h4>
+              <div class="relative w-full sm:w-72">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="urEngineSearch" type="text" placeholder="Search engine number…" class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm" oninput="renderUrUnits()" />
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-3 w-10"></th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Color</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
+                    <th id="urBranchHead" class="hidden px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Branch</th>
+                  </tr>
+                </thead>
+                <tbody id="urUnitsBody" class="bg-white divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+            <div id="urUnitsStatus" class="text-sm text-slate-500 px-5 py-3 bg-slate-50 border-t border-slate-100">Loading available units…</div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="urContinueBtn" onclick="urContinue()" disabled class="px-5 py-2 text-sm rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 opacity-60 cursor-not-allowed">Continue</button>
+          </div>
+        </div>
+
+        <!-- STEP 2 — UNIT RELEASE FORM (one card: motorcycle summary, customer, sale, footer) -->
+        <div id="urStep2" class="hidden">
+          <div class="bg-white border border-slate-200 rounded-lg">
+
+            <!-- Selected motorcycle -->
+            <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-3">
+                  <span id="urEngine" class="font-mono text-lg font-medium text-slate-900">-</span>
+                  <span id="urTypeBadge"></span>
+                </div>
+                <p class="mt-1 text-sm text-slate-600">
+                  <span id="urModel">-</span> · <span id="urColor">-</span> · Chassis <span id="urChassis" class="font-mono">-</span> · <span id="urCurBranch">-</span>
+                </p>
+                <p class="mt-0.5 text-xs text-slate-400 truncate">
+                  Model code <span id="urModelCode">-</span> · <span id="urCurStatus">-</span> · MCID <span id="urMcid" class="font-mono">-</span>
+                </p>
+                <input id="urBranch" type="hidden" readonly />
+              </div>
+              <button type="button" onclick="urBackToStep1()" class="shrink-0 text-sm text-slate-500 hover:text-slate-800">Change unit</button>
+            </div>
+
+            <!-- Customer -->
+            <div class="px-6 py-5 border-t border-slate-100">
+              <h2 class="text-sm font-semibold text-slate-800 mb-4">Customer</h2>
+              <div class="relative">
+                <label for="urCustomerSearch" class="block text-sm text-slate-600 mb-1.5">Customer / account name <span class="text-slate-400">*</span></label>
+                <input id="urCustomerSearch" type="text" role="combobox" aria-autocomplete="list" aria-controls="urCustomerList" aria-expanded="false" autocomplete="off" placeholder="Search approved Maker by name or CID…" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400"
+                  oninput="urCustomerTyped()" onfocus="renderUrCustomers()" onkeydown="urCustomerKeydown(event)" onblur="closeUrCustomers()" />
+                <div id="urCustomerList" role="listbox" aria-label="Eligible customers" class="hidden absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-md"></div>
+                <p id="urCustomerStatus" class="mt-1.5 text-xs text-slate-400"></p>
+              </div>
+              <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
+                <div>
+                  <label for="urContact" class="block text-xs text-slate-400">Contact</label>
+                  <input id="urContact" type="text" readonly placeholder="—" class="w-full border-0 bg-transparent p-0 text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none" />
+                </div>
+                <div class="md:col-span-2">
+                  <label for="urAddress" class="block text-xs text-slate-400">Address</label>
+                  <input id="urAddress" type="text" readonly placeholder="—" class="w-full border-0 bg-transparent p-0 text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none" />
+                </div>
+              </div>
+              <div class="mt-5 md:w-1/3">
+                <label for="urAccountNo" class="block text-sm text-slate-600 mb-1.5">Account no. <span class="text-slate-400">*</span></label>
+                <input id="urAccountNo" type="text" placeholder="Customer account number" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+              </div>
+            </div>
+
+            <!-- Sale: date + documents (ATR for Brand-New, RCI for Repo) -->
+            <div class="px-6 py-5 border-t border-slate-100">
+              <h2 class="text-sm font-semibold text-slate-800 mb-4">Sale</h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label for="urDate" class="block text-sm text-slate-600 mb-1.5">Date of sale <span class="text-slate-400">*</span></label>
+                  <input id="urDate" type="date" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                </div>
+                <div id="urAtrWrap">
+                  <label for="urAtrNo" class="block text-sm text-slate-600 mb-1.5">ATR no. <span class="text-slate-400">*</span></label>
+                  <input id="urAtrNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                </div>
+                <div id="urRciWrap" class="hidden">
+                  <label for="urRciNo" class="block text-sm text-slate-600 mb-1.5">RCI no. <span class="text-slate-400">*</span></label>
+                  <input id="urRciNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                </div>
+                <div>
+                  <label for="urSiNo" class="block text-sm text-slate-600 mb-1.5">SI no. <span class="text-slate-400">*</span></label>
+                  <input id="urSiNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                </div>
+              </div>
+              <div id="urError" class="hidden mt-4 text-sm text-rose-600"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div class="flex items-center gap-1.5 min-w-0 text-xs text-slate-400">
+                <label for="urTxnId" class="shrink-0">Transaction</label>
+                <input id="urTxnId" type="text" readonly data-no-uppercase class="w-full sm:w-80 border-0 bg-transparent p-0 font-mono text-xs text-slate-400 focus:outline-none" />
+              </div>
+              <div class="flex justify-end gap-2 shrink-0">
+                <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-md text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button id="urSubmitBtn" onclick="submitSale()" class="px-4 py-2 text-sm rounded-md bg-slate-900 text-white font-medium hover:bg-slate-800">Review release</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+
+    <!-- SALE REVIEW / CONFIRM MODAL (with countdown) -->
+    <div id="saleConfirmModal" role="dialog" aria-modal="true" aria-labelledby="scTitle" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeSaleReview()"></div>
+      <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-200">
+            <h3 id="scTitle" class="text-lg font-bold text-slate-900">Review Unit Release</h3>
+            <p class="text-xs text-slate-500">Verify the customer, documents and motorcycle before confirming — this marks the unit Sold.</p>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mb-4">
+              <div><div class="text-slate-400 text-xs">Sale No.</div><div id="scNo" class="font-mono font-semibold text-slate-800">-</div></div>
+              <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Transaction ID</div><div id="scTxnId" class="font-mono text-xs text-slate-600 break-all">-</div></div>
+              <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Customer</div><div id="scCustomer" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Account No.</div><div id="scAccount" class="font-mono text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Branch</div><div id="scBranch" class="text-slate-800">-</div></div>
+              <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Documents</div><div id="scDocs" class="font-mono text-slate-800">-</div></div>
+            </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 mb-4 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+              Confirm the engine number below. Once released, this unit is marked Sold.
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
+                  </tr>
+                </thead>
+                <tbody id="scUnitsBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <button onclick="closeSaleReview()" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="scConfirmBtn" onclick="confirmSaleFinal()" disabled class="px-5 py-2 text-sm rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 opacity-60 cursor-not-allowed">Please review… (5)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+

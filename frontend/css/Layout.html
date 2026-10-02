@@ -1,0 +1,43 @@
+  <style>
+    /* Shared branding for sign-in and navigation. */
+    .brand-lockup { display: flex; align-items: center; gap: 16px; }
+    .brand-logo { width: 76px; height: 76px; flex-shrink: 0; object-fit: contain; }
+    .brand-copy { min-width: 0; }
+    .brand-wordmark { margin: 0; color: #12356b; font-size: 38px; font-weight: 700; line-height: 1; letter-spacing: -0.045em; }
+    .brand-wordmark::after { content: ''; display: block; width: 32px; height: 3px; margin-top: 10px; border-radius: 2px; background: #e52329; }
+    .brand-description { margin: 9px 0 0; color: #475569; font-size: 11px; font-weight: 600; line-height: 1.55; letter-spacing: 0.035em; }
+    .brand-description span { display: block; }
+    .brand-lockup--nav { gap: 10px; text-decoration: none; }
+    .brand-lockup--nav .brand-logo { width: 40px; height: 40px; }
+    .brand-lockup--nav .brand-wordmark { font-size: 21px; letter-spacing: -0.035em; }
+    .brand-lockup--nav .brand-wordmark::after { width: 22px; height: 2px; margin-top: 5px; }
+    .brand-lockup--nav:focus-visible { outline: 2px solid #12356b; outline-offset: 5px; border-radius: 4px; }
+    @media (max-width: 380px) {
+      .brand-lockup { gap: 12px; }
+      .brand-logo { width: 64px; height: 64px; }
+      .brand-wordmark { font-size: 32px; }
+      .brand-description { font-size: 10px; }
+    }
+  </style>
+
+  <!-- NAVIGATION STYLE -->
+  <style>
+    .nav-link {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dropdown-menu {
+      box-shadow: 0 4px 12px -2px rgb(15 23 42 / 0.08);
+      transform-origin: top left;
+    }
+
+    .dropdown-item {
+      transition: all 0.15s ease;
+    }
+
+    .dropdown-item:hover {
+      color: #1e293b;
+    }
+  </style>
+
+

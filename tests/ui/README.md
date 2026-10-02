@@ -1,6 +1,6 @@
 # Unit Release UI verification
 
-Build a standalone preview from the current Index.html:
+Build a standalone preview from the assembled frontend/ page:
 
 ~~~powershell
 node tests/ui/build-preview.js
@@ -43,3 +43,7 @@ window.__nextFailure = { method: 'createUnitRelease', message: 'Connection lost'
 ~~~
 
 Inspect window.__gasCalls to see fake requests. Unexpected callback errors are recorded in window.__gasErrors; unrelated dashboard endpoints are not implemented by this focused mock. Reloading resets fake sales and units. Generated preview.html is gitignored and all tests/docs are excluded from Apps Script.
+
+## Restructure smoke check
+
+The preview assembles frontend/Index.html and all its partials. In addition to the Unit Release checklist above, check login, the centered navbar with three menus, dashboard rendering, Applications > Customer Applications, and Unit Release step 1. These are manual rendered checks; the automated checks preserve every original script body and verify include/template paths.

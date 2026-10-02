@@ -1,4 +1,4 @@
-// MCDatabase.js - Motorcycle sheet access, master updates, and transaction status helpers.
+// Database.js - Motorcycle sheet access, master updates, and transaction status helpers.
 // Apps Script server files share one global scope; no imports are required.
 
 // =============================================

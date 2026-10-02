@@ -1,4 +1,4 @@
-// MCDiagnostics.js - Existing sheet diagnostics and manual lifecycle test/cleanup functions.
+// Diagnostics.js - Existing sheet diagnostics and manual lifecycle test/cleanup functions.
 // Apps Script server files share one global scope; no imports are required.
 
 function getMCSheetInfo() {

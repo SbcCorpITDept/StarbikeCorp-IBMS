@@ -1,0 +1,252 @@
+    <!-- INTERBRANCH TRANSFERS — LIST -->
+    <div id="transfersPage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div class="mb-6 flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">Interbranch Transfers</h1>
+            <p class="text-sm text-slate-500">Move units between branches</p>
+          </div>
+          <button onclick="openCreateTransfer()" class="inline-flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Transfer
+          </button>
+        </div>
+
+        <!-- Pending receipts (inbound, awaiting confirmation) -->
+        <div id="pendingReceiptsCard" class="hidden rounded-2xl border border-amber-200 bg-amber-50 shadow-sm mb-4 overflow-hidden">
+          <div class="px-5 py-3 border-b border-amber-200 flex items-center gap-2">
+            <i data-lucide="inbox" class="w-4 h-4 text-amber-700"></i>
+            <h4 class="text-sm font-bold text-amber-800">Pending Receipts</h4>
+            <span class="text-xs text-amber-700">Transfers inbound to your branch — confirm to receive</span>
+          </div>
+          <div id="pendingReceiptsBody" class="divide-y divide-amber-100"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">IB No</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">From</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">To</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Units</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-slate-600 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody id="transfersBody" class="bg-white divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="transfersStatus" class="text-sm text-slate-500 px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center">
+            <i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Loading transfers…
+          </div>
+          <div id="tfPaginationBar" class="pagination-bar hidden">
+            <div id="tfPaginationInfo" class="pagination-info"></div>
+            <div id="tfPaginationControls" class="pagination-controls"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- CREATE TRANSFER -->
+    <div id="createTransferPage" class="hidden overflow-y-auto w-full flex-1">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <button onclick="showPage('transfersPage', null)" class="mb-4 text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Transfers
+        </button>
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-slate-800">Create Interbranch Transfer</h1>
+          <p class="text-sm text-slate-500">Send available units from your branch to another</p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Source Branch</label>
+              <input id="ctSource" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Destination Branch <span class="text-red-500">*</span></label>
+              <select id="ctDest" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <option value="">Select branch…</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">IB-OUT No <span class="text-red-500">*</span></label>
+              <input id="ctNo" type="text" placeholder="e.g. IB-2025-001" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Date</label>
+              <input id="ctDate" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="md:col-span-4">
+              <label class="block text-xs font-medium text-slate-500 mb-1">Remarks</label>
+              <input id="ctRemarks" type="text" placeholder="Optional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-900">Available Units</h4>
+            <span id="ctSelCount" class="text-xs text-slate-500">0 selected</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-4 py-3 w-10"><input id="ctSelectAll" type="checkbox" onchange="toggleAllTransferUnits(this)" /></th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                </tr>
+              </thead>
+              <tbody id="ctUnitsBody" class="bg-white divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="ctUnitsStatus" class="text-sm text-slate-500 px-5 py-3 bg-slate-50 border-t border-slate-100">Loading available units…</div>
+        </div>
+
+        <div id="ctError" class="hidden mt-4 text-sm text-red-600"></div>
+        <div class="mt-4 flex justify-end gap-2">
+          <button onclick="showPage('transfersPage', null)" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+          <button id="ctSubmitBtn" onclick="submitTransfer()" class="px-5 py-2 text-sm rounded-lg bg-blue-700 text-white font-semibold hover:bg-blue-800">Create Transfer</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- TRANSFER REVIEW / CONFIRM MODAL (with countdown) -->
+    <div id="transferConfirmModal" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeTransferReview()"></div>
+      <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Review Transfer</h3>
+            <p class="text-xs text-slate-500">Verify the motorcycles before confirming — this moves them out of your branch.</p>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
+              <div><div class="text-slate-400 text-xs">IB No</div><div id="tcNo" class="font-mono font-semibold text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">From</div><div id="tcFrom" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">To</div><div id="tcTo" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Units</div><div id="tcCount" class="text-slate-800 font-semibold">-</div></div>
+            </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 mb-4 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+              Double-check the engine numbers below. Once confirmed, these units are marked In Transit.
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-64 overflow-y-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                  </tr>
+                </thead>
+                <tbody id="tcUnitsBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <button onclick="closeTransferReview()" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="tcConfirmBtn" onclick="confirmTransferFinal()" disabled class="px-5 py-2 text-sm rounded-lg bg-blue-700 text-white font-semibold hover:bg-blue-800 opacity-60 cursor-not-allowed">Please review… (5)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANCEL PENDING TRANSFER MODAL (with countdown) -->
+    <div id="cancelTransferModal" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeCancelTransfer()"></div>
+      <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Cancel Transfer</h3>
+            <p class="text-xs text-slate-500">This returns the units to <strong>Available</strong> at the source branch. The original transfer stays in history as Cancelled.</p>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+              <div><div class="text-slate-400 text-xs">IB No</div><div id="cxNo" class="font-mono font-semibold text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">From</div><div id="cxFrom" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">To</div><div id="cxTo" class="text-slate-800">-</div></div>
+            </div>
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 mb-3 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+              Only cancel if this transfer was created by mistake. The units below will return to your inventory.
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-48 overflow-y-auto mb-4">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                  </tr>
+                </thead>
+                <tbody id="cxUnitsBody"></tbody>
+              </table>
+            </div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Reason (optional)</label>
+            <input id="cxReason" type="text" placeholder="e.g. wrong destination branch" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <button onclick="closeCancelTransfer()" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Keep transfer</button>
+            <button id="cxConfirmBtn" onclick="confirmCancelFinal()" disabled class="px-5 py-2 text-sm rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 opacity-60 cursor-not-allowed">Please review… (3)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRM RECEIPT MODAL (review + verify) -->
+    <div id="confirmReceiptModal" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeConfirmReceipt()"></div>
+      <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Confirm Receipt</h3>
+            <p class="text-xs text-slate-500">Review this inbound transfer carefully before receiving it into your branch.</p>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+              <div><div class="text-slate-400 text-xs">From (source)</div><div id="crFrom" class="text-slate-800 font-semibold">-</div></div>
+              <div><div class="text-slate-400 text-xs">To (destination)</div><div id="crTo" class="text-slate-800 font-semibold">-</div></div>
+              <div><div class="text-slate-400 text-xs">Units</div><div id="crUnitCount" class="text-slate-800 font-semibold">-</div></div>
+            </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 mb-3 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+              Check the engine numbers below against the physical delivery. Make sure this is the right transfer.
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-56 overflow-y-auto mb-4">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                  </tr>
+                </thead>
+                <tbody id="crUnitsBody"></tbody>
+              </table>
+            </div>
+
+            <label class="flex items-start gap-2 text-xs text-slate-600 mb-4 cursor-pointer">
+              <input id="crVerifyChk" type="checkbox" class="mt-0.5" onchange="updateReceiveConfirmState()" data-no-uppercase />
+              <span>I verified the <strong>source branch</strong>, <strong>destination</strong>, and <strong>engine numbers</strong> above match the physical delivery.</span>
+            </label>
+
+            <label class="block text-xs font-medium text-slate-500 mb-1">Enter IB No to confirm <span class="text-red-500">*</span></label>
+            <input id="crIBInNo" type="text" placeholder="Type the transfer number from your delivery document" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" oninput="updateReceiveConfirmState()" />
+            <p class="mt-1.5 text-xs text-slate-400">The IB-IN uses the same number as the IB-OUT (like an invoice). The number is not shown here on purpose — enter it from your document.</p>
+            <div id="crError" class="hidden mt-3 text-sm text-red-600"></div>
+          </div>
+          <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <button onclick="closeConfirmReceipt()" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="crSubmitBtn" onclick="submitConfirmReceipt()" disabled class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 opacity-60 cursor-not-allowed">Please review… (5)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+

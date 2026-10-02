@@ -1,4 +1,4 @@
-// MCSetup.js - Manual motorcycle database setup and schema verification.
+// Setup.js - Manual motorcycle database setup and schema verification.
 // Apps Script server files share one global scope; no imports are required.
 
 // =====================================================================

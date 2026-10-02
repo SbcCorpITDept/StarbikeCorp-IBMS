@@ -1,0 +1,514 @@
+  <!-- ==================== SCRIPTS ==================== -->
+  <script>
+    /* ================================================
+       CORE AUTH & APP STATE
+       ================================================ */
+    const navbar          = document.getElementById('mainNavbar');
+    const loginScreen     = document.getElementById('loginScreen');
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const userMenuBtn     = document.getElementById('userMenuBtn');
+    const userMenu        = document.getElementById('userMenu');
+
+    window._userBranch = 'ALL';
+    window._userRole   = '';
+
+    /* ================================================
+       ROLE SCOPE
+       Only these roles are locked to their own branch.
+       Every other role (Admin, IT, Head Office, Staff, ...)
+       is unrestricted and sees ALL forms from every branch.
+       Mirrors BRANCH_RESTRICTED_ROLES in Code.js.
+       ================================================ */
+    const BRANCH_RESTRICTED_ROLES = ['branch manager', 'ci', 'csa', 'area manager'];
+
+    /** lowercase + collapse spaces/punctuation so "Branch_Manager" === "branch manager". */
+    function normalizeRole(role) {
+      return (role || '').toString().trim().toLowerCase().replace(/[\s._-]+/g, ' ');
+    }
+
+    /** True when this role may only ever see its own branch's records. */
+    function isBranchRestrictedRole(role) {
+      return BRANCH_RESTRICTED_ROLES.indexOf(normalizeRole(role)) !== -1;
+    }
+
+    /**
+     * Effective data scope for a user object.
+     * Restricted roles keep their assigned branch; everyone else gets 'ALL',
+     * which makes every branch filter (client + server) a no-op.
+     */
+    function resolveBranchScope(user) {
+      user = user || {};
+      if (!isBranchRestrictedRole(user.role)) return 'ALL';
+      return (user.branch || '').toString().trim() || 'ALL';
+    }
+
+    /** Apply a logged-in user's role scope to the global app state. */
+    function applyUserScope(user) {
+      user = user || {};
+      window._userRole   = user.role || '';
+      window._userBranch = resolveBranchScope(user);
+      return window._userBranch;
+    }
+
+    /* ================================================
+       SESSION EXPIRY
+       Absolute 7-day expiry from login time — does NOT
+       refresh on activity (matches the "Remember me for
+       7 days" promise in the UI).
+
+       On login: we save `sessionExpiresAt` (epoch ms).
+       On every checkpoint (page load, before any data
+       fetch): we call isSessionValid(). If expired, we
+       clear storage and silently bounce to login.
+       ================================================ */
+    const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;   // 7 days
+    const SESSION_KEY         = 'sessionExpiresAt';
+
+    /** Returns true if the user is logged in AND not expired. */
+    function isSessionValid() {
+      if (localStorage.getItem('applicantHubLoggedIn') !== 'true') return false;
+      const expiresAt = parseInt(localStorage.getItem(SESSION_KEY) || '0', 10);
+      // Older logins (before this feature) won't have the key — treat as expired
+      // so they re-authenticate and get a proper expiry stamp this time.
+      if (!expiresAt) return false;
+      return Date.now() < expiresAt;
+    }
+
+    /** Tear down all session state and return to login. Silent — no modal. */
+    function expireSession() {
+      localStorage.removeItem('applicantHubLoggedIn');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem(SESSION_KEY);
+      window._userBranch = 'ALL';
+      window._userRole   = '';
+      // Reset table-load guards so a fresh login refetches data
+      if (typeof casTableLoaded  !== 'undefined') casTableLoaded  = false;
+      if (typeof cirTableLoaded  !== 'undefined') cirTableLoaded  = false;
+      if (typeof cashTableLoaded !== 'undefined') cashTableLoaded = false;
+      window.mcInventoryLoaded = false;
+      hideApp();
+    }
+
+    /**
+     * Guard wrapper for any action that requires a valid session.
+     * Use before data fetches:
+     *   if (!window.requireSession()) return;
+     * Returns true if valid, false if expired (and bounces user to login).
+     */
+    function requireSession() {
+      if (isSessionValid()) return true;
+      expireSession();
+      return false;
+    }
+    window.requireSession = requireSession;
+
+    function showApp() {
+      loginScreen.classList.add('hidden');
+      navbar.classList.remove('hidden');
+      dashboardScreen.style.display = 'flex';
+    }
+
+    function hideApp() {
+      loginScreen.classList.remove('hidden');
+      navbar.classList.add('hidden');
+      dashboardScreen.style.display = 'none';
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('loginBtn');
+
+      document.getElementById('loginError').classList.add('hidden');
+      if (!email || !password) { showLoginError('Please enter both email and password'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader mx-auto"></div>';
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(onLoginSuccess)
+          .withFailureHandler(onLoginFailure)
+          .validateLogin(email, password);
+      } else {
+        console.warn('⚠️ Standalone mode — using simulation');
+        setTimeout(() => simulateLogin(email, password), 900);
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+    function onLoginSuccess(result) {
+      if (result.success) {
+        localStorage.setItem('applicantHubLoggedIn', 'true');
+        localStorage.setItem('currentUser', JSON.stringify(result.user));
+        // Stamp absolute 7-day expiry (does not refresh on activity)
+        localStorage.setItem(SESSION_KEY, String(Date.now() + SESSION_DURATION_MS));
+        applyUserScope(result.user);
+        updateNavUserInfo(result.user);
+        showApp();
+        if (typeof loadStats === 'function') loadStats();
+        setTimeout(() => showPage('dashboardPage'), 300);
+      } else {
+        showLoginError(result.message || 'Invalid credentials');
+        resetLoginButton();
+      }
+    }
+
+    function onLoginFailure(error) {
+      console.error('Login failed:', error);
+      showLoginError('Connection error. Please try again.');
+      resetLoginButton();
+    }
+
+    function showLoginError(text) {
+      document.getElementById('loginErrorText').innerText = text;
+      document.getElementById('loginError').classList.remove('hidden');
+    }
+
+    function resetLoginButton() {
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = false;
+      btn.innerHTML = '<span id="btnText">Sign In</span><i data-lucide="arrow-right" class="w-5 h-5"></i>';
+      lucide.createIcons();
+    }
+
+    function updateNavUserInfo(user) {
+      const nameEl  = document.getElementById('navUserName');
+      const emailEl = document.getElementById('navUserEmail');
+      const roleEl  = document.getElementById('navUserRole');
+      const btn     = document.getElementById('userMenuBtn');
+      const name    = user.fullName || user.name || 'User';
+      if (nameEl)  nameEl.textContent  = name;
+      if (emailEl) emailEl.textContent = user.email || '—';
+      if (roleEl)  roleEl.textContent  = user.role || 'Staff';
+      if (btn)     btn.title = name;   // name on hover, since the button is icon-only
+    }
+
+    function simulateLogin(email, password) {
+      if (email.includes('@') && password.length >= 4) {
+        onLoginSuccess({ success: true, user: { name: 'Test User', fullName: 'Test User', email, role: 'Staff', branch: 'Quezon City' } });
+      } else {
+        showLoginError('Invalid email or password (Demo Mode)');
+        resetLoginButton();
+      }
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('passwordIcon');
+      input.type  = input.type === 'password' ? 'text' : 'password';
+      icon.setAttribute('data-lucide', input.type === 'password' ? 'eye' : 'eye-off');
+      lucide.createIcons();
+    }
+
+    /* ================================================
+       LOGOUT MODAL
+       ================================================ */
+    function handleLogout() {
+      document.getElementById('logoutModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutModal  = document.getElementById('logoutModal');
+      const cancelBtn    = document.getElementById('cancelLogout');
+      const confirmBtn   = document.getElementById('confirmLogout');
+      const btnText      = confirmBtn.querySelector('.logout-btn-text');
+      const logoutLoader = confirmBtn.querySelector('.logout-loader');
+
+      cancelBtn.addEventListener('click', () => { logoutModal.classList.add('hidden'); resetLogoutBtn(); });
+
+      confirmBtn.addEventListener('click', () => {
+        confirmBtn.disabled = true;
+        btnText.textContent = 'Signing out...';
+        logoutLoader.classList.add('show');
+        setTimeout(() => {
+          localStorage.removeItem('applicantHubLoggedIn');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem(SESSION_KEY);   // clear session stamp on manual logout
+          window._userBranch = 'ALL';
+          window._userRole   = '';
+          // Reset table-loaded guards so re-login fetches fresh branch data
+          casTableLoaded  = false;
+          cirTableLoaded  = false;
+          cashTableLoaded = false;
+          window.mcInventoryLoaded = false;
+          document.getElementById('loginForm').reset();
+          document.getElementById('loginError').classList.add('hidden');
+          hideApp();
+          resetLoginButton();
+          logoutModal.classList.add('hidden');
+          resetLogoutBtn();
+        }, 3500);
+      });
+
+      logoutModal.addEventListener('click', (e) => {
+        if (e.target === logoutModal) { logoutModal.classList.add('hidden'); resetLogoutBtn(); }
+      });
+
+      function resetLogoutBtn() {
+        confirmBtn.disabled = false;
+        btnText.textContent = 'Yes, Sign Out';
+        logoutLoader.classList.remove('show');
+      }
+    });
+
+    /* ================================================
+       PAGE SWITCHING — skeleton-aware
+       ================================================ */
+    let casTableLoaded  = false;
+    let cirTableLoaded  = false;
+    let cashTableLoaded = false;
+
+    function showPage(pageId, clickedLink = null) {
+      const pages = ['dashboardPage', 'casTablePage', 'cirTablePage', 'cashTablePage', 'mcInventoryPage',
+        'inventoryDashboardPage', 'rrListPage', 'rrDetailsPage', 'transfersPage', 'createTransferPage',
+        'salesPage', 'createSalePage', 'movementHistoryPage', 'unitProfilePage'];
+      let currentPage = null;
+      pages.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) currentPage = el;
+      });
+
+      const nextPage = document.getElementById(pageId);
+      if (!nextPage || currentPage === nextPage) return;
+
+      function revealNext() {
+        nextPage.classList.remove('hidden');
+
+        if (pageId === 'dashboardPage') {
+          const sk = document.getElementById('dashboardSkeleton');
+          const ct = document.getElementById('dashboardContent');
+          sk.classList.remove('hidden');
+          ct.classList.add('hidden');
+          setTimeout(() => {
+            sk.classList.add('hidden');
+            ct.classList.remove('hidden');
+            ct.classList.add('content-fade-in');
+            setTimeout(() => ct.classList.remove('content-fade-in'), 400);
+          }, 2400);
+
+        } else if (pageId === 'casTablePage') {
+          const sk = document.getElementById('casTableSkeleton');
+          const ct = document.getElementById('casTableContent');
+          const branchDisplay = (window._userBranch === 'ALL') ? 'All Branches' : (window._userBranch || '—');
+
+          const lbl = document.getElementById('casBranchLabel');
+          if (lbl) lbl.textContent = branchDisplay;
+
+          sk.classList.remove('hidden');
+          ct.classList.add('hidden');
+          if (!casTableLoaded && typeof loadData === 'function') { loadData(); casTableLoaded = true; }
+          setTimeout(() => {
+            sk.classList.add('hidden');
+            ct.classList.remove('hidden');
+            ct.classList.add('content-fade-in');
+            setTimeout(() => ct.classList.remove('content-fade-in'), 400);
+          }, 1800);
+
+        } else if (pageId === 'cirTablePage') {
+          const sk = document.getElementById('cirTableSkeleton');
+          const ct = document.getElementById('cirTableContent');
+          const branchDisplay = (window._userBranch === 'ALL') ? 'All Branches' : (window._userBranch || '—');
+
+          const lbl = document.getElementById('cirBranchLabel');
+          if (lbl) lbl.textContent = branchDisplay;
+
+          sk.classList.remove('hidden');
+          ct.classList.add('hidden');
+          
+          if (!cirTableLoaded && typeof loadCIRData === 'function') { loadCIRData(); cirTableLoaded = true; }
+
+          setTimeout(() => {
+            sk.classList.add('hidden');
+            ct.classList.remove('hidden');
+            ct.classList.add('content-fade-in');
+            setTimeout(() => ct.classList.remove('content-fade-in'), 400);
+          }, 1800);
+
+        } else if (pageId === 'cashTablePage') {
+          // ── Cash page reveal: uses its OWN skeleton/content elements
+          //    (the previous code accidentally pointed to CIR ids).
+          const sk = document.getElementById('cashTableSkeleton');
+          const ct = document.getElementById('cashTableContent');
+          const branchDisplay = (window._userBranch === 'ALL') ? 'All Branches' : (window._userBranch || '—');
+
+          const lbl = document.getElementById('cashBranchLabel');
+          if (lbl) lbl.textContent = branchDisplay;
+          
+          sk.classList.remove('hidden');
+          ct.classList.add('hidden');
+          if (!cashTableLoaded && typeof loadCashData === 'function') { loadCashData(); cashTableLoaded = true; }
+          setTimeout(() => {
+            sk.classList.add('hidden');
+            ct.classList.remove('hidden');
+            ct.classList.add('content-fade-in');
+            setTimeout(() => ct.classList.remove('content-fade-in'), 400);
+          }, 1800);
+        }  else if (pageId === 'mcInventoryPage') {
+          const sk = document.getElementById('mcInventorySkeleton');
+          const ct = document.getElementById('mcInventoryContent');
+          const branchDisplay = (window._userBranch === 'ALL') ? 'All Branches' : (window._userBranch || '—');
+        
+          const lbl = document.getElementById('mcBranchLabel');
+          if (lbl) lbl.textContent = branchDisplay;
+        
+          sk.classList.remove('hidden');
+          ct.classList.add('hidden');
+          if (!window.mcInventoryLoaded && typeof window.loadMCInventory === 'function') {
+            window.loadMCInventory();
+            window.mcInventoryLoaded = true;
+          }
+          setTimeout(() => {
+            sk.classList.add('hidden');
+            ct.classList.remove('hidden');
+            ct.classList.add('content-fade-in');
+            setTimeout(() => ct.classList.remove('content-fade-in'), 400);
+          }, 1800);
+        } else if (pageId === 'inventoryDashboardPage') {
+          if (typeof loadInventoryDashboard === 'function' && !window.invDashLoaded) {
+            loadInventoryDashboard();
+            window.invDashLoaded = true;
+          }
+        } else if (pageId === 'rrListPage') {
+          if (typeof loadRRList === 'function') loadRRList();
+        } else if (pageId === 'transfersPage') {
+          if (typeof loadTransfers === 'function') loadTransfers();
+        } else if (pageId === 'salesPage') {
+          if (typeof loadSales === 'function') loadSales();
+        } else if (pageId === 'movementHistoryPage') {
+          if (typeof loadMovementHistory === 'function') loadMovementHistory();
+        }
+
+        nextPage.classList.add('opacity-0', 'translate-y-2');
+
+        requestAnimationFrame(() => {
+          nextPage.classList.add('transition-all', 'duration-300');
+          nextPage.classList.remove('opacity-0', 'translate-y-2');
+          setTimeout(() => nextPage.classList.remove('transition-all', 'duration-300'), 300);
+        });
+      }
+
+      if (currentPage) {
+        currentPage.classList.add('opacity-0', '-translate-y-2', 'transition-all', 'duration-200');
+        setTimeout(() => {
+          currentPage.classList.add('hidden');
+          currentPage.classList.remove('opacity-0', '-translate-y-2', 'transition-all', 'duration-200');
+          revealNext();
+        }, 200);
+      } else {
+        revealNext();
+      }
+
+      // Sidebar active state
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      if (clickedLink) clickedLink.classList.add('active');
+
+      lucide.createIcons();
+    }
+
+    /* ================================================
+       USER MENU TOGGLE
+       ================================================ */
+    // Hidden state = opacity-0 + invisible + -translate-y-1 (set in the markup).
+    function setUserMenuOpen(open) {
+      if (!userMenu) return;
+      ['opacity-0', 'invisible', '-translate-y-1'].forEach(c => userMenu.classList.toggle(c, !open));
+      userMenuBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    userMenuBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setUserMenuOpen(userMenu.classList.contains('invisible'));
+    });
+    document.addEventListener('click', () => setUserMenuOpen(false));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setUserMenuOpen(false); });
+    // Picking an item closes the menu; clicks on the header area keep it open.
+    userMenu?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (e.target.closest('[role="menuitem"]')) setUserMenuOpen(false);
+    });
+
+    // Unified Dropdown Handler for all menus
+    function toggleNavDropdown(btn) {
+      const menu = btn.nextElementSibling;
+
+      // If already open, close it
+      if (menu.classList.contains('opacity-100')) {
+        closeAllNavDropdowns();
+      } else {
+        closeAllNavDropdowns(); // close others first
+        menu.classList.remove('opacity-0', 'invisible', 'scale-95');
+        menu.classList.add('opacity-100', 'visible', 'scale-100');
+      }
+    }
+
+    function closeAllNavDropdowns() {
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('opacity-100', 'visible', 'scale-100');
+        menu.classList.add('opacity-0', 'invisible', 'scale-95');
+      });
+    }
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.relative.group')) {
+        closeAllNavDropdowns();
+      }
+    });
+
+    // Stub handler for not-yet-built items (Reports, Administration, Account).
+    function comingSoon(evt, name) {
+      if (evt && evt.preventDefault) evt.preventDefault();
+      closeAllNavDropdowns();
+      const label = name || 'This feature';
+      if (typeof showToast === 'function') showToast(label + ' — coming soon', 'info');
+      else alert(label + ' — coming soon');
+    }
+
+    // Render a friendly placeholder inside every Phase-3 page shell so the
+    // routing is visible/clickable before Phase 4 fills in real content.
+    function renderShellPlaceholders() {
+      document.querySelectorAll('.mc-shell-placeholder').forEach(el => {
+        if (el.dataset.rendered) return;
+        el.dataset.rendered = '1';
+        const name = el.dataset.pageName || 'This page';
+        el.innerHTML =
+          '<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">' +
+            '<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">' +
+              '<i data-lucide="hammer" class="w-6 h-6 text-slate-400"></i>' +
+            '</div>' +
+            '<div class="text-base font-semibold text-slate-700">' + name + '</div>' +
+            '<div class="mt-1 text-sm text-slate-400">Screen wired and routing works. Content arrives in Phase 4.</div>' +
+          '</div>';
+      });
+      if (window.lucide) lucide.createIcons();
+    }
+    document.addEventListener('DOMContentLoaded', renderShellPlaceholders);
+
+    /* ================================================
+       ON PAGE LOAD
+       ================================================ */
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+
+      // Session-aware auto-login: only restore if the 7-day window is still open.
+      // If expired (or never had a stamp), expireSession() silently clears state
+      // and the user sees the login screen as if they were never logged in.
+      if (isSessionValid()) {
+        const savedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        applyUserScope(savedUser);
+        updateNavUserInfo(savedUser);
+        showApp();
+        setTimeout(() => {
+          if (typeof loadStats === 'function') loadStats();
+          showPage('dashboardPage');
+        }, 300);
+      } else if (localStorage.getItem('applicantHubLoggedIn') === 'true') {
+        // Had a logged-in flag but expired — clean up so the next login is fresh
+        expireSession();
+      }
+    });
+  </script>
+

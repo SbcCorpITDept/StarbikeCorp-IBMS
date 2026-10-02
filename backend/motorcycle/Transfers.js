@@ -1,4 +1,4 @@
-// MCTransfers.js - Transfer lists, creation, receipt confirmation, and cancellation.
+// Transfers.js - Transfer lists, creation, receipt confirmation, and cancellation.
 // Apps Script server files share one global scope; no imports are required.
 
 // ── Interbranch Transfers ───────────────────────────────────────────────────

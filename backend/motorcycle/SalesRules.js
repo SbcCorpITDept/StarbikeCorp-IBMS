@@ -1,4 +1,4 @@
-// MCSalesRules.js - Unit Release rules: value normalization and required documents.
+// SalesRules.js - Unit Release rules: value normalization and required documents.
 // Apps Script server files share one global scope; no imports are required.
 
 // Lowercase, trim, and collapse spaces/dots/dashes/underscores to one space,
