@@ -1,0 +1,2826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Credit Investigation Form</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ==================== GLOBAL TIGHTENING ==================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      line-height: 1.4;
+    }
+
+    body {
+      box-sizing: border-box;
+      font-family: calibri;
+      font-size: 12px;
+      background-color: #f3f3f3;
+    }
+
+    input[type="text"] {
+      text-transform: uppercase;
+      font-family: Calibri;
+      font-size: 11.8px;
+    }
+
+    div.border-black.p-1.text-center {
+      padding: 0.4px 0 !important;
+    }
+
+    /* ==================== PAPER (Screen Preview - Auto Centered) ==================== */
+    .paper {
+      width: 8.5in;
+      min-height: 13in;
+      padding: 0.25in;
+      margin: 40px auto;
+      background: white;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+    }
+    
+    /* ==================== HEADER STYLE ==================== */
+    .header__container {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: auto;
+    }
+
+    .header__options {
+      display: flex;
+      gap: 20px;
+    }
+
+    .header__label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .header__label-text {
+      font-weight: bold;
+    }
+
+    .header__filing-text {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ==================== FINACE STYLE ==================== */
+    .finance__container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin-top: 16px;
+    }
+
+    .finance__input-text {
+      border: 0;
+      border-bottom: 1px solid black;
+    }
+
+    /* ==================== SOURCE STYLE ==================== */
+    .sourcetype__container {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      padding-left: 4px;
+      border: 1px solid black;
+      
+    }
+
+    .sourcetype__label-text {
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      gap: 4px;
+    }
+
+    .sourcetype__input-text {
+      width: 150px;
+      margin-bottom: 4px;
+      border: 0;
+      border-bottom: 1px solid black;
+    }
+
+    /* ==================== TEXT AREA LINE ==================== */
+
+    .lined-textarea {
+      width: 300px;
+      font-size: 12px;
+      font-family: monospace;
+      line-height: 1.5em;
+      padding: 1px 8px;           /* better padding */
+
+      outline: none;
+      resize: none;
+      background-color: white;
+
+      height: calc(1.5em * 9);
+
+      /* Much more printable gradient */
+      background-image: linear-gradient(to bottom, 
+        transparent 0%, 
+        transparent 90%, 
+        #222 90%, 
+        #222 90%                /* thicker line (~3% of line-height) */
+      );
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ==================== BANNER STYLE ==================== */
+    .maker__banner {
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+      color: white;
+      padding: 4px 0;
+      background: black;
+    }
+
+    /* ==================== MEDIA PRINT ==================== */
+    @media print {
+      @page {
+        size: 8.5in 13in;
+        margin: 0;
+      }
+    
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+      }
+    
+      .paper {
+        width: 8.5in !important;
+        height: 13in !important; /* stricter */
+        margin: 0 !important;
+        padding: 0.25in !important;
+        box-shadow: none !important;
+        overflow: hidden;
+      }
+    
+      .paper .m-4 {
+        margin: 0 !important;
+      }
+    
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    
+      input, textarea {
+        border-color: black !important;
+        color: black !important;
+        background: transparent !important;
+      }
+
+      .lined-textarea {
+          background-image: linear-gradient(to bottom, 
+            transparent 0%, 
+            transparent 89%, 
+            #1a1a1a 80%, 
+            #1a1a1a 90%
+          ) !important;
+          background-size: 100% 1.6em !important;
+          background-repeat: repeat-y !important;
+          background-color: white !important;
+      }
+
+      .page-break {
+        break-after: page;
+        page-break-after: always;
+      }
+
+      .page-break {
+        break-after: page;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+    
+  <div class="paper page-break">
+    <!-- HEADER / FILING DETAILS / APPLICATION TYPES -->
+    <div class="header__container">
+
+      <h2 class="text-[16px] font-bold">CREDIT INVESTIGATION REPORT</h3>
+          <label class="header__filing-text" for="filing-branch" class="inline-flex">
+            <span class="font-bold"> 
+              BRANCH 
+            </span> 
+            <input 
+              type="text" 
+              name="filing-branch" 
+              id="filing-branch"
+              class="w-full mr-2 border-b border-black"
+              value="<?= cir.storeBranch || '' ?>"
+            >
+          </label>
+
+      <h3 class="text-[14px] font-bold">STRICTLY CONFIDENTIAL</h4>
+        <label class="header__filing-text" for="filing-cir" class="inline-flex">
+          <span class="font-bold">
+            CIR#
+          </span>
+          <input 
+            type="text" 
+            name="filing-cir" 
+            id="filing-cir"
+            class="w-full mr-2 border-b border-black"
+            value="<?= cir.cid || '' ?>"
+          >
+        </label>
+
+      <div class="header__options">
+        <label class="header__label" for="application-type-maker">
+          <input 
+            type="checkbox" 
+            name="application-type-maker"
+            id="application-type-maker"
+            <?= cir.applicant === 'Maker' ? 'checked' : '' ?>
+          >
+          <span class="header__label-text">MAKER</span>
+        </label>
+
+        <label class="header__label" for="application-type-comaker">
+          <input type="checkbox" 
+            name="application-type-comaker" 
+            id="application-type-comaker"
+            <?= cir.applicant === 'Co-Maker' ? 'checked' : '' ?>
+          >
+          <span class="header__label-text">CO-MAKER</span>
+        </label>
+
+        <label class="header__label" for="application-type-towhom">
+          <span class="header__label-text">TO WHOM?: </span>
+          <input type="text" 
+            name="application-type-towhom" 
+            id="application-type-towhom"
+            class="border-b border-black"
+            value="<?= cir.cir_toWhom || '' ?>"
+          >
+        </label>
+      </div>
+
+      <label class="header__filing-text" for="filing_status" class="inline-flex">
+        <span class="font-bold"> 
+          STATUS/CONDITION
+        </span>
+        <input 
+          type="text" 
+          name="filing_status" 
+          id="filing_status"
+          class="w-full mr-2 border-b border-black"
+          value="<?= cir.applicantStatus || '' ?>"
+        >
+      </label>
+    </div>
+
+    <!-- FINANCE DETAILS -->
+    <div class="finance__container">
+      <!-- ROW1 -->
+      <label for="finance-brand">
+        <span class="font-bold"> 
+          BRAND
+        </span>
+        <input 
+          type="text" 
+          name="finance-brand" 
+          id="finance-brand" 
+          class="finance__input-text"
+          value="<?= cir.cirfin_Brand || '' ?>"
+        >
+      </label>
+
+      <label for="finance-dp">
+        <span class="font-bold"> 
+          DP
+        </span>
+        <input 
+          type="text" 
+          name="finance-dp" 
+          id="finance-dp"
+          class="finance__input-text"
+          value="<?= cir.cirfin_DP || '' ?>"
+        >
+      </label>
+
+      <label for="finance-mi">
+        <span class="font-bold"> 
+          MI
+        </span>
+        <input 
+          type="text" 
+          name="finance-mi" 
+          id="finance-mi"
+          class="finance__input-text"
+          value="<?= cir.cirfin_MI || '' ?>"
+        >
+      </label>
+
+      <label for="finance-user">
+        <span class="font-bold"> 
+          USER
+        </span>
+        <input 
+          type="text" 
+          name="finance-user" 
+          id="finance-user"
+          class="finance__input-text"
+          value="<?= cir.cirfin_User || '' ?>"
+        >
+      </label>
+
+      <!-- ROW2 -->
+      <label for="finance-unit">
+        <span class="font-bold"> 
+          UNIT
+        </span>
+        <input 
+          type="text" 
+          name="finance-unit" 
+          id="finance-unit"
+          class="finance__input-text"
+          value="<?= cir.cirfin_Unit || '' ?>"
+        >
+      </label>
+
+      <label for="finance-terms">
+        <span class="font-bold"> 
+          TERMS
+        </span>
+        <input 
+         type="text" 
+         name="finance-terms" 
+         id="finance-terms"
+         class="finance__input-text"
+         value="<?= cir.cirfin_Terms || '' ?>"
+        >
+      </label>
+
+      <label for="finance-dbr">
+        <span class="font-bold"> 
+          DBR%
+        </span>
+        <input 
+          type="text" 
+          name="finance-dbr" 
+          id="finance-dbr"
+          class="finance__input-text"
+          value="<?= cir.cirfin_DBR || '' ?>"
+        >
+      </label>
+
+      <label for="finance-purpose">
+        <span class="font-bold"> 
+          PURPOSE
+        </span>
+        <input 
+          type="text" 
+          name="finance-purpose" 
+          id="finance-purpose"
+          class="finance__input-text"
+          value="<?= cir.cirfin_Purpose || '' ?>"
+        >
+      </label>
+    </div>
+
+    <!-- APPLICATION SOURCE -->
+    <div class="sourcetype__container">
+      <label class="sourcetype__label-text" for="source-walkin">
+        <input 
+          type="checkbox" 
+          name="source-walkin" 
+          id="source-walkin"
+          <?= cir.typeOfApplicant === 'Walk-in' ? 'checked' : '' ?>
+        >
+        WALK-IN
+      </label>
+
+      <label class="sourcetype__label-text" for="source-online">
+        <input type="checkbox" 
+          name="source-online" 
+          id="source-online" 
+          <?= cir.typeOfApplicant === 'Online' ? 'checked' : '' ?>
+        >
+        ONLINE
+      </label>
+
+      <label class="sourcetype__label-text" for="source-marketing">
+        <input type="checkbox" 
+          name="source-marketing" 
+          id="source-marketing"
+          <?= cir.typeOfApplicant === 'Marketing Activity' ? 'checked' : '' ?>
+        >
+        MKTG. ACTIVITY
+      </label>
+
+      <label class="sourcetype__label-text" for="source-referral">
+        <input type="checkbox" 
+          name="source-referral" 
+          id="source-referral"
+          <?= cir.typeOfApplicant === 'Employee Referral' ? 'checked' : '' ?>
+        >
+        EMP. REFERRAL
+      </label>
+
+      <label class="sourcetype__label-text" for="source-adc">
+        <input type="checkbox" 
+          name="source-adc" 
+          id="source-adc"
+          <?= cir.typeOfApplicant === 'ADC' ? 'checked' : '' ?>
+        >
+        ADC
+      </label>
+
+      <label class="sourcetype__label-text" for="source-infocenter">
+        <input type="checkbox" 
+          name="source-infocenter" 
+          id="source-infocenter"
+          <?= cir.typeOfApplicant === 'Info Center' ? 'checked' : '' ?>
+        >
+        INFO CENTER
+      </label>
+
+      <label class="sourcetype__label-text" for="source-agent">
+        <input type="checkbox" 
+          name="source-agent" 
+          id="source-agent"
+          <?= cir.typeOfApplicant === 'With-Agent' ? 'checked' : '' ?>
+        >
+        W/AGENT
+      </label>
+
+      <label class="sourcetype__label-text" for="source-agentname">
+        NAME: 
+        <input type="text" 
+          name="source-agentname" 
+          id="source-agentname"
+          class="sourcetype__input-text"
+          value="<?= cir.agentName || '' ?>"
+        >
+      </label>
+    </div>
+
+    <div class="maker__banner">
+      APPLICANT/CO-MAKER INFORMATION
+    </div>
+
+    <div class="grid grid-cols-[8fr_2fr] auto-rows-auto">
+              
+      <!-- APPLICANT/CO-MAKER NAME / BIRTHDATE / AGE -->
+      <div class="grid grid-cols-[100px_4fr_70px_100px] grid-rows-2 border border-black border-t-0">
+        <span class="pl-2 font-bold">APPLICANT NAME</span>
+        <div class="flex">
+          <input type="text" class="text-center" value="<?= cir.lastName || '' ?>" />
+          <input type="text" class="text-center" value="<?= cir.firstName || '' ?>" />
+          <input type="text" class="text-center" value="<?= cir.middleName || '' ?>" />
+        </div>
+        <input type="text" class="text-center" value="<?= cir.suffix || '' ?>" />
+        <input type="text" class="text-center" value="<?= cir.alias || '' ?>" />
+
+        <div></div>
+
+        <div class="flex justify-evenly items-end text-[9px]">
+          <span>LAST NAME</span>
+          <span>FIRST NAME</span>
+          <span>MIDDLE NAME</span>
+        </div>
+        <div class="flex justify-center items-end text-[9px]">
+          <span>SUFFIX</span>
+        </div>
+        <div class="flex justify-center items-end text-[9px]">
+          <span>ALLIAS/NICKNAME</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-[1fr_1fr] grid-rows-2 border border-black border-t-0 border-l-0">
+        <div>
+          <span class="pl-2 font-bold">BIRTHDATE</span>
+        </div>
+        <div class="border-l border-black">
+          <span class="pl-2 font-bold">AGE</span>
+        </div>
+        <input 
+          type="text" 
+          class="flex w-full text-center" 
+          value="<?= cir.cir_Birthdate || '' ?>"
+        />
+        <input
+          type="text"
+          class="flex w-full text-center border-l border-black"
+          value="<?= cir.cir_Age || '' ?>"
+        />
+      </div>
+
+
+      <!-- PRESENT ADDRESS / BIRTHPLACE -->
+      <div class="border border-black border-t-0">
+        <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+          <div>
+            <span class="pl-2 font-bold">
+              PRESENT ADDRESS 
+            </span>
+            <span class="text-[9px]">
+              (House Number, Street Address, Barangay, Municipality/City, Province)
+            </span>
+          </div>
+          <span class="font-bold text-center">YEAR OF STAY</span>
+
+          <input 
+            type="text" 
+            class="flex w-full pl-2" 
+            value="<?= cir.cir_PresAdd || '' ?>"
+          />
+          <input 
+            type="text" 
+            class="flex w-full text-center"
+            value="<?= cir.cir_YOS1 || '' ?>"
+          />
+        </div>
+      </div>
+      <div class="border-b border-r border-black">
+        <span class="pl-2 font-bold">BIRTHPLACE</span>
+        <input 
+          type="text" 
+          class="flex w-full text-center" 
+          value="<?= cir.cir_PlaceOfBirth || '' ?>"
+        />
+      </div>
+
+
+      <!-- PROVINCIAL ADDRESS / CELLPHONE NO. -->
+      <div class="border border-black border-t-0">
+        <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+          <div>
+            <span class="pl-2 font-bold">
+              PROVINCIAL ADDRESS 
+            </span>
+            <span class="text-[9px]">
+              (House Number, Street Address, Barangay, Municipality/City, Province)
+            </span>
+          </div>
+          <span class="font-bold text-center">YEAR OF STAY</span>
+          
+          <input 
+            type="text" 
+            class="flex w-full pl-2" 
+            value="<?= cir.cir_ProvAdd || '' ?>"
+          />
+          <input 
+            type="text" 
+            class="flex w-full text-center" 
+            value="<?= cir.cir_YOS2 || '' ?>"
+          />
+        </div>
+      </div>
+      <div class="border-b border-r border-black">
+        <span class="pl-2 font-bold">CELLPHONE NO.</span>
+        <input 
+          type="text" 
+          class="flex w-full text-center" 
+          value="<?= cir.cir_PhoneNo || '' ?>"
+        />
+      </div>
+
+
+      <!-- PRRVIOUS ADDRESS / LANDLINE -->
+      <div class="border border-black border-t-0">
+        <div class="grid grid-cols-[5fr_1fr] auto-rows-auto">
+          <div>
+            <span class="pl-2 font-bold">
+              PREVIOUS ADDRESS 
+            </span>
+            <span class="text-[9px]">
+              (House Number, Street Address, Barangay, Municipality/City, Province)
+            </span>
+          </div>
+          <span class="font-bold text-center">YEAR OF STAY</span>
+          
+          <input 
+            type="text" 
+            class="flex w-full pl-2" 
+            value="<?= cir.cir_PrevAdd || '' ?>"
+          />
+          <input 
+            type="text" 
+            class="flex w-full text-center"
+            value="<?= cir.cir_YOS3 || '' ?>"
+          />
+          
+          <div class="flex whitespace-nowrap pb-[0.5px]">
+            <span class="pl-2 text-[9px]">Reason For Leaving: </span>
+            <input
+              type="text"
+              class="w-[calc(100%-16px)] pl-2 border-b border-black"
+              value="<?= cir.cir_WhyLeave || '' ?>"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="border-r border-black">
+        <span class="pl-2 font-bold">RELIGION</span>
+        <input 
+          type="text" 
+          class="flex w-full text-center"
+          value="<?= cir.cir_Religion || '' ?>" 
+        />
+        
+        <!-- NATIONALITY -->
+        <div class="border-t border-black">
+          <span class="pl-2 font-bold">NATIONALITY</span>
+        </div>
+      </div>
+
+
+      <!-- CIVIL STATUS -->
+        <div class="grid grid-cols-[5fr_2fr] auto-rows-auto border border-black border-t-0">
+          <div class="col-span-2 flex gap-8">
+            <div class="pl-2 font-bold whitespace-nowrap">CIVIL STATUS</div>
+            
+            <div class="flex gap-3 whitespace-nowrap">
+              <span class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  <?= cir.cir_CivilStatus === 'Single' ? 'checked' : '' ?>
+                /> 
+                SINGLE
+              </span>
+              <span class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  <?= cir.cir_CivilStatus === 'Married' ? 'checked' : '' ?>
+                /> 
+                MARRIED
+              </span>
+              <span class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  <?= cir.cir_CivilStatus === 'Separated' ? 'checked' : '' ?>
+                /> 
+                SEPARATED
+              </span>
+              <span class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  <?= cir.cir_CivilStatus === 'Live-In' ? 'checked' : '' ?>
+                /> 
+                LIVE-IN
+              </span>
+              <span class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  <?= cir.cir_CivilStatus === 'Widow/Er' ? 'checked' : '' ?>
+                /> 
+                WIDOW/ER
+              </span>
+              <span class="flex items-center">
+                YEAR: 
+                <input 
+                  type="text" 
+                  class="border-b border-black text-center w-[70%]"
+                  value="<?= cir.cir_WidowYears || '' ?>"
+                />
+              </span>
+            </div>
+          </div>
+        </div>
+      
+      <!-- NATIONALITY INPUT FIELD -->
+      <div class="flex border-r border-black">
+        <input 
+          type="text" 
+          class="w-full text-center"
+          value="<?= cir.cir_Nationality || '' ?>"
+        />
+      </div>
+    </div>
+
+    <!-- EDUCATIONAL ATTAINMENT / COURSE / RELATIVE WORKING AT STARBIKE -->
+    <div class="grid grid-cols-[1.495fr_1fr] border border-b-0 border-black">
+      <div class="flex border-r border-black">
+        <span 
+          class="flex items-center whitespace-nowrap px-2 font-bold">
+          EDUCATIONAL ATTAINMENT
+        </span>
+        <input 
+          type="text" 
+          class="w-full"
+          value="<?= cir.cir_EducationAttain || '' ?>" 
+        />
+      </div>
+
+      <div class="flex pl-2 gap-4">
+        <span class="font-bold">RELATIVE WORKING AT STARBIKE?</span>
+        <div class="flex gap-2">
+          <label for="rwas_yes" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rwas_yes" id="rwas_yes" 
+              <?= cir.cir_RWAS === 'Yes' ? 'checked' : '' ?>
+            />
+            YES
+    
+        </label>
+          <label for="rwas_no" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rwas_no" id="rwas_no"
+              <?= cir.cir_RWAS === 'No' ? 'checked' : '' ?>
+            />
+            NO
+       
+         </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-[1.495fr_1fr] border border-t-0 border-black">
+      <div class="flex border-t border-r border-black">
+        <span class="flex px-2 font-bold items-center">COURSE</span>
+        <input 
+          type="text" 
+          class="w-full"
+          value="<?= cir.cir_Course || '' ?>"
+        />
+      </div>
+
+      <div class="flex">
+        <span class="whitespace-nowrap pl-2 pr-1">IF YES, Name: </span>
+        <input
+          type="text"
+          class="w-full border-b border-black mb-[0.9px]"
+          value="<?= cir.cir_Name || '' ?>"
+        />
+      </div>
+    </div>
+
+    <!-- EMPLOYMENT DETAILS -->
+    <div class="grid grid-cols-[1.495fr_1fr] border border-t-0 border-black ">
+      <div class="flex-col pl-2 border-r border-black">
+          <span class="font-bold">EMPLOYER/BUSINESS NAME</span>
+          <input 
+            type="text" 
+            name="maker-empbusiname" 
+            id="maker-empbusiname"
+            class="w-full"
+            value="<?= cir.cir_EmpBusiName || '' ?>"
+          >
+      </div>
+
+      <div class="pl-2">
+        <span class="font-bold">POSITION</span>
+        <input 
+          type="text" 
+          name="maker-position" 
+          id="maker-position"
+          class="w-full"
+          value="<?= cir.cir_Position || '' ?>"
+        >
+      </div>
+    </div>
+
+    <div class="grid grid-cols-[1.495fr_1fr] border border-t-0 border-black ">
+      <div class="flex-col pl-2 border-r border-black">
+          <span class="font-bold">EMPLOYER/BUSINESS ADDRESS</span>
+          <input 
+            type="text" 
+            name="maker-empbusiaddress" 
+            id="maker-empbusiaddress"
+            class="w-full"
+            value="<?= cir.cir_EmpBusiAdd || '' ?>"
+          >
+      </div>
+
+      <div class="pl-2">
+        <span class="font-bold">LENGTH OF SERVICE</span>
+        <input 
+          type="text" 
+          name="maker-los" 
+          id="maker-los"
+          class="w-full"
+          value="<?= cir.cir_WorkService || '' ?>"
+        >
+      </div>
+    </div>
+
+    <div class="grid grid-cols-[1.495fr_1fr] border border-t-0 border-black ">
+      <div class="flex-col pl-2 border-r border-black">
+          <span class="font-bold">NET INCOME</span>
+          <input 
+            type="text" 
+            name="maker-netincome" 
+            id="maker-netincome"
+            class="w-full"
+            value="<?= cir.cir_NetIncome || '' ?>"
+          >
+      </div>
+
+      <div class="pl-2">
+        <span class="font-bold">CONTACT NUMBER</span>
+        <input 
+          type="text" 
+          name="maker-worknumber" 
+          id="maker-worknumber"
+          class="w-full"
+          value="<?= cir.cir_WorkPhone || '' ?>"
+        >
+      </div>
+    </div>
+
+    <!-- SPOUSE/CO-SIGNER INFORMATION -->
+    <div class="relative">
+      <!-- VERTICAL LABEL -->
+      <div 
+        class ="
+          absolute left-[-16px] 
+          top-[200px] 
+          -translate-y-1/2 [writing-mode:vertical-rl] 
+          rotate-180 
+          text-[12px] 
+          tracking-wide 
+          whitespace-nowrap"
+      >
+        (CO-SIGNER CAN BE SPOUSE, PARENT OR SIBLING AND RELATIVE)
+      </div>
+
+      <div class="maker__banner">
+        SPOUSE/CO-SIGNER INFORMATION
+      </div>
+
+      <div class="grid grid-cols-[8fr_2fr] auto-rows-auto">
+
+        <!-- SPOUSE/CO-SIGNER / BIRTHDATE / AGE -->
+        <div class="grid grid-cols-[100px_4fr_70px_100px] grid-rows-2 border border-black border-t-0">
+          <span class="pl-2 font-bold">APPLICANT NAME</span>
+          <div class="flex">
+            <input type="text" class="text-center" value="<?= cir.circos_lastName || '' ?>"/>
+            <input type="text" class="text-center" value="<?= cir.circos_firstName || '' ?>"/>
+            <input type="text" class="text-center" value="<?= cir.circos_middleName || '' ?>"/>
+          </div>
+          <input type="text" class="text-center" value="<?= cir.circos_Suffix || '' ?>"/>
+          <input type="text" class="text-center" value="<?= cir.circos_Alias || '' ?>"/>
+
+          <div></div>
+
+          <div class="flex justify-evenly items-end text-[9px]">
+            <span>LAST NAME</span>
+            <span>FIRST NAME</span>
+            <span>MIDDLE NAME</span>
+          </div>
+          <div class="flex justify-center items-end text-[9px]">
+            <span>SUFFIX</span>
+          </div>
+          <div class="flex justify-center items-end text-[9px]">
+            <span>ALLIAS/NICKNAME</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-[1fr_1fr] grid-rows-2 border border-black border-t-0 border-l-0">
+          <div>
+            <span class="pl-2 font-bold">BIRTHDATE</span>
+          </div>
+          <div class="border-l border-black">
+            <span class="pl-2 font-bold">AGE</span>
+          </div>
+          
+          <input 
+            type="text" 
+            class="flex w-full text-center" 
+            value="<?= cir.circos_Birthdate || '' ?>"
+          />
+          <input
+            type="text"
+            class="flex w-full text-center border-l border-black"
+            value="<?= cir.circos_Age || '' ?>"
+          />
+        </div>
+
+        <!-- PRESENT ADDRESS / BIRTHPLACE -->
+        <div class="border border-black border-t-0">
+          <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+            <div>
+              <span class="pl-2 font-bold">
+                PRESENT ADDRESS
+              </span>
+              <span class="text-[9px]">
+                (House Number, Street Address, Barangay, Municipality/City, Province)
+              </span>
+            </div>
+            <span class="font-bold text-center">YEAR OF STAY</span>
+            
+            <input 
+              type="text" 
+              class="flex w-full pl-2" 
+              value="<?= cir.circos_PresAdd || '' ?>"
+            />
+            <input 
+              type="text" 
+              class="flex w-full text-center"
+              value="<?= cir.circos_YOS1 || '' ?>"
+             />
+          </div>
+        </div>
+
+        <div class="border-b border-r border-black">
+          <span class="pl-2 font-bold">BIRTHPLACE</span>
+          <input 
+            type="text" 
+            class="flex w-full text-center" 
+            value="<?= cir.circos_PlaceOfBirth || '' ?>"
+          />
+        </div>
+
+        <!-- PROVINCIAL ADDRESS / CELLPHONE NO. -->
+        <div class="border border-black border-t-0">
+          <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+            <div>
+              <span class="pl-2 font-bold">
+                PROVINCIAL ADDRESS
+              </span>
+              <span class="text-[9px]">
+                (House Number, Street Address, Barangay, Municipality/City, Province)
+              </span>
+            </div>
+            <span class="font-bold text-center">YEAR OF STAY</span>
+            
+            <input 
+              type="text" 
+              class="flex w-full pl-2" 
+              value="<?= cir.circos_ProvAdd || '' ?>"
+            />
+            <input 
+              type="text" 
+              class="flex w-full text-center" 
+              value="<?= cir.circos_YOS2 || '' ?>"
+            />
+          </div>
+        </div>
+        
+        <div class="border-b border-r border-black">
+          <span class="pl-2 font-bold">CELLPHONE NO.</span>
+          <input 
+            type="text" 
+            class="flex w-full text-center"
+            value="<?= cir.circos_PhoneNo || '' ?>"
+          />
+        </div>
+
+        <!-- PRRVIOUS ADDRESS / LANDLINE -->
+        <div class="border border-black border-t-0">
+          <div class="grid grid-cols-[5fr_1fr] grid-rows-3">
+            <div>
+              <span class="pl-2 font-bold">PREVIOUS ADDRESS</span>
+              <span class="text-[9px]">
+                (House Number, Street Address, Barangay, Municipality/City, Province)
+              </span>
+            </div>
+            <span class="font-bold text-center">YEAR OF STAY</span>
+            
+            <input 
+              type="text" 
+              class="flex w-full pl-2" 
+              value="<?= cir.circos_PrevAdd || '' ?>"
+            />
+            <input 
+              type="text" 
+              class="flex w-full text-center" 
+              value="<?= cir.circos_YOS3 || '' ?>"
+            />
+            
+            <div class="flex whitespace-nowrap pb-[0.5px]">
+              <span class="pl-2 text-[9px]">Reason For Leaving: </span>
+              <input
+                type="text"
+                class="w-[calc(100%-16px)] pl-2 border-b border-black"
+                value="<?= cir.circos_WhyLeave || '' ?>"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="border-b border-r border-black">
+          <span class="pl-2 font-bold">LANDLINE</span>
+          <input 
+            type="text" 
+            class="flex w-full text-center" 
+            value="<?= cir.circos_Landline || '' ?>"
+            />
+        </div>
+
+        <!-- CIVIL STATUS -->
+        <div>
+          <div class="grid grid-cols-[5fr_2fr] auto-rows-auto border border-black border-t-0">
+            <div class="col-span-2 flex gap-8">
+              <div class="pl-2 font-bold whitespace-nowrap">
+                CIVIL STATUS
+              </div>
+              
+              <div class="flex gap-3 whitespace-nowrap">
+                <span class="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    <?= cir.circos_CivilStatus === 'Single' ? 'checked' : '' ?>
+                  />
+                  SINGLE
+                </span>
+                <span class="flex items-center">
+                  <input 
+                    type="checkbox"
+                    <?= cir.circos_CivilStatus === 'Married' ? 'checked' : '' ?>
+                  /> 
+                  MARRIED
+                </span>
+                <span class="flex items-center">
+                  <input 
+                    type="checkbox"
+                    <?= cir.circos_CivilStatus === 'Separated' ? 'checked' : '' ?>
+                  />
+                  SEPARATED
+                  </span>
+                <span class="flex items-center">
+                  <input 
+                    type="checkbox"
+                    <?= cir.circos_CivilStatus === 'Live-In' ? 'checked' : '' ?>
+                  /> 
+                  LIVE-IN
+                </span>
+                <span class="flex items-center">
+                  <input 
+                    type="checkbox"
+                    <?= cir.circos_CivilStatus === 'Widow/Er' ? 'checked' : '' ?>
+                  />
+                  WIDOW/ER
+                </span>
+                <span class="flex items-center">
+                  YEAR:
+                  <input 
+                    type="text" 
+                    class="border-b border-black text-center w-[70%]" 
+                    value="<?= cir.circos_WidowYears || '' ?>"
+                  />
+                </span>
+              </div>
+            </div>
+
+            <!-- EDUCATION AND HOUSEHOLD -->
+            <div class="flex flex-col border-t border-r border-black">
+              <span class="pl-2 font-bold">EDUCATIONAL ATTAINMENT</span>
+              <input 
+                type="text" 
+                class="ml-2"
+                value="<?= cir.circos_EducationAttain || '' ?>"
+              >
+            </div>
+            <div class="flex flex-col border-t border-black">
+              <span class="pl-2 font-bold">NO. OF HOUSEHOLD</span>
+              <input 
+                type="text" 
+                class="text-center"
+                value="<?= cir.circos_HouseMember || '' ?>"
+              >
+            </div>
+                  
+          </div>
+        </div>
+
+        <!-- RELIGION -->
+        <div class="row-span-1 flex flex-col border-r border-b border-black">
+          <span class="pl-2 pb-1 font-bold">RELIGION</span>
+          <input 
+            type="text" 
+            class="text-center"
+            value="<?= cir.circos_Religion || '' ?>"
+          >
+        </div>
+
+              <!-- COURSE / DEPENDENTS -->
+        <div class=" border border-black border-t-0">
+          <div class="grid grid-cols-[5fr_2fr]">
+            <div class="flex flex-col border-r border-black">
+              <span class="pl-2 font-bold">COURSE</span>
+              <input 
+                type="text" 
+                class="ml-2"
+                value="<?= cir.circos_Course || '' ?>"
+              >
+            </div>
+            
+            <div class="flex flex-col">
+              <span class="pl-2 font-bold">NO. OF DEPENDENTS</span>
+              <input 
+                type="text" 
+                class="text-center"
+                value="<?= cir.circos_DependentNo || '' ?>"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- NATIONALITY -->
+        <div class="border-r border-b border-black">
+          <div class="flex flex-col">
+            <span class="pl-2 font-bold">NATIONALITY</span>
+            <input 
+              type="text" 
+              class="text-center"
+              value="<?= cir.circos_Nationality || '' ?>"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!--DEPENDENTS INFORMATION-->
+      <div class="grid grid-cols-[2fr_70px_repeat(2,1.5fr)] grid-rows-4 gap-px divide-x divide-y divide-black border border-black">
+        <!--HEADER-->
+        <div class="">
+          <span class="pl-2 font-bold">CHILDRENS'S NAME</span>
+          <span class="text-[10px]">(YOUNGEST CHILD GOING TO SCHOOL)</span>
+        </div>
+        <div class="text-center border-r border-b border-black">
+          <span class="font-bold">AGE</span>
+        </div>
+        <div class="text-center border-r border-b border-black">
+          <span class="font-bold">SCHOOL</span>
+        </div>
+        <div class="text-center border-b border-black">
+          <span class="font-bold">SCHOOL ADDRESS</span>
+        </div>
+
+        <!--1ST CHILD-->
+        <div class="flex pl-2">
+          <span class="font-bold">1.</span>
+          <input 
+            type="text" 
+            class="w-full"
+            value="<?= cir.cirdep_First || '' ?>" 
+          />
+        </div>
+        <div class="flex"><input type="text" class="w-full text-center" value="<?= cir.cirdep_FAge || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_FSchool || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_FSchoolAdd || '' ?>"/></div>
+
+        <!--2ND CHILD-->
+        <div class="flex pl-2">
+          <span class="font-bold">2.</span>
+          <input 
+            type="text" 
+            class="w-full" 
+            value="<?= cir.cirdep_Second || '' ?>"
+          />
+        </div>
+        <div class="flex"><input type="text" class="w-full text-center" value="<?= cir.cirdep_SAge || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_SSchool || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_SSchoolAdd || '' ?>"/></div>
+
+        <!--3ND CHILD-->
+        <div class="flex pl-2">
+          <span class="font-bold">3.</span>
+          <input 
+            type="text" 
+            class="w-full" 
+            value="<?= cir.cirdep_Third || '' ?>"
+          />
+        </div>
+        <div class="flex"><input type="text" class="w-full text-center" value="<?= cir.cirdep_TAge || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_TSchool || '' ?>"/></div>
+        <div class="flex"><input type="text" class="w-full" value="<?= cir.cirdep_TSchoolAdd || '' ?>"/></div>
+      </div>
+
+      <div class="flex-col border border-black">
+        <span class="pl-2 font-bold">IDENTIFICATION DOCUMENT SHOWN</span>
+        <input 
+          type="text" 
+          name="idshown" 
+          id="idshown"
+          class="w-full"
+          value="<?= cir.cir_IDShown || '' ?>"
+        >
+      </div>
+
+
+      <!-- MONTHLY INCOME AND EXPENSES (CAPACITY) -->
+      <div class="maker__banner">
+        MONTHLY INCOME AND EXPENSES (CAPACITY)
+      </div>
+
+      <div class="grid grid-cols-2 grid-rows-2">
+        <!-- SOURCES OF INCOME -->
+        <div class="text-center border border-black pr-1 pb-1">
+          <div class="border-b border-black">
+            <span class="font-bold"> SOURCES OF INCOME</span>
+          </div>
+          <div class="grid grid-cols-2 font-bold">
+            <span>TYPE OF INCOME</span>
+            <span>NET INCOME</span>
+          </div>
+          <div class="grid grid-cols-2">
+            <!-- LEFT SIDE -->
+            <div class="flex flex-col col-start-1 pl-2">
+              <span class="flex justify-start font-bold gap-2">
+                1. 
+                <input 
+                  type="text" 
+                  name="incometype_first" 
+                  id="incometype_first" 
+                  class="w-full border-b border-black font-normal"
+                  value="<?= cir.cir_TOI1 || '' ?>"
+                >
+              </span>
+              <span class="flex justify-start font-bold gap-2">
+                2. 
+                <input 
+                  type="text" 
+                  name="incometype_second" 
+                  id="incometype_second" 
+                  class="w-full border-b border-black font-normal"
+                  value="<?= cir.cir_TOI2 || '' ?>"
+                >
+              </span>
+              <span class="flex justify-start font-bold gap-2">
+                3. 
+                <input 
+                  type="text" 
+                  name="incometype_third" 
+                  id="incometype_third" 
+                  class="w-full border-b border-black font-normal"
+                  value="<?= cir.cir_TOI3 || '' ?>"
+                >
+              </span>
+            </div>
+            
+            <!-- RIGHT SIDE -->
+            <div class="flex flex-col col-start-2 pl-2">
+              <span class="flex justify-start font-bold gap-2">
+                1.  
+                <input 
+                  type="text" 
+                  name="netincome_first" 
+                  id="netincome_first" 
+                  class="w-full border-b border-black font-normal" 
+                  value="<?= cir.cir_Net1 || '' ?>"
+                >
+              </span>
+              <span class="flex justify-start font-bold gap-2">
+                2.  
+                <input 
+                  type="text" 
+                  name="netincome_second" 
+                  id="netincome_second" 
+                  class="w-full border-b border-black font-normal"
+                  value="<?= cir.cir_Net2 || '' ?>"
+                >
+              </span>
+              <span class="flex justify-start font-bold gap-2">
+                3. 
+                <input 
+                  type="text" 
+                  name="netincome_third" 
+                  id="netincome_third" 
+                  class="w-full border-b border-black font-normal"
+                  value="<?= cir.cir_Net3 || '' ?>"
+                >
+              </span>
+              <span class="flex justify-start font-bold gap-2">
+                TOTAL: 
+                  <input 
+                    type="text" 
+                    name="netincome_total" 
+                    id="netincome_total" 
+                    class="w-full border-b border-black font-normal" 
+                    value="<?= cir.cir_Total || '' ?>"
+                  >
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEBT BURDERN RATIO -->
+        <div class="text-center row-span-2  border border-black">
+          <div class="border-b border-black">
+            <span class="font-bold">DEBT BURDEN RATIO %</span>
+          </div>
+        
+          <div class="grid grid-cols-[0.9fr_0.4fr_0.6fr_0.4fr] border-b border-black">
+            <!-- COLUMN 0.9FR -->
+            <div class="flex flex-col text-left gap-4">
+              <span class="border border-black">MONTHLY INSTALLMENT</span>
+              
+              <div class="flex flex-col">
+                <span class="border border-black">NET INCOME <span class="text-[8px]">(MONTHLY)</span> </span>
+                <span class="border border-black">TOTAL EXPENSE <span class="text-[8px]">(DEPENDENTS)</span> </span>
+                <span class="border border-black">TOTAL AMOUNT OF LOANS</span>
+                <span class="border border-black">TOTAL NET INCOME</span>
+              </div>
+
+              <span class="border border-black">DEBT BURDEN RATIO</span>
+            </div>
+
+            <!-- COLUMN 0.4R -->
+            <div class="flex flex-col pr-1 gap-4">
+              <input 
+                type="text"
+                name="dbr_mi" 
+                id="dbr_mi" 
+                class="w-full h-[18.8px] text-center border border-black"
+                value="<?= cir.dbr_MI || '' ?>"
+              > 
+              
+              <div class="flex flex-col">
+                <input 
+                  type="text" 
+                  name="dbr_netincome" 
+                  id="dbr_netincome" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_NI || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_totalexpensedependent" 
+                  id="dbr_totalexpensedependent" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_TotalDepExp || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_totalloansamount" 
+                  id="dbr_totalloansamount" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_TotalLoanAmount || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_totalnetincome" 
+                  id="dbr_totalnetincome" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_TotalNI || '' ?>"
+                >
+              </div>
+
+              <input 
+                type="text" 
+                name="dbr_burdenratio" 
+                id="dbr_burdenratio" 
+                class="w-full h-[18.8px] text-center border border-black"
+                value="<?= cir.dbr_DebtBurdenRatio || '' ?>"
+              >
+            </div>
+
+            <!-- COLUMN 0.6FR -->
+            <div class="flex flex-col text-left pl-1 gap-4">
+              <div class="flex flex-col">
+                <span class="border border-black">No. of Dependents</span>
+                <span class="border border-black">Total Expenses</span>
+              </div>
+
+              <div class="flex flex-col">
+                <span class="border border-black">Total Loans (MI)</span>
+                <span class="border border-black">Loan 1(MI)</span>
+                <span class="border border-black">Loan 2(MI)</span>
+                <span class="border border-black">Loan 3(MI)</span>
+              </div>
+            </div>
+
+            <div class="flex flex-col text-left pr-[0.5px] gap-4">
+              <div class="flex flex-col">
+                <input 
+                  type="text" 
+                  name="dbr_numberofdependents" 
+                  id="dbr_numberofdependents" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_NoOfDependents || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_totalexpense" 
+                  id="dbr_totalexpense" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_TotalExpenses || '' ?>"
+                >
+              </div>
+
+              <div class="flex flex-col">
+                <input 
+                  type="text" 
+                  name="dbr_totalloans" 
+                  id="dbr_totalloans" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_TotalLoans || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_firstloan" 
+                  id="dbr_firstloan" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_Loan1 || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_secondloan" 
+                  id="dbr_secondloan" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_Loan2 || '' ?>"
+                >
+                <input 
+                  type="text" 
+                  name="dbr_thirdloan" 
+                  id="dbr_thirdloan" 
+                  class="w-full h-[18.8px] text-center border border-black"
+                  value="<?= cir.dbr_Loan3 || '' ?>"
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col text-left text-[10px] pl-4 pt-1 ">
+            <span>*Passing rate is 50.00% and below</span>
+            <span>*Failing rate is 50.00001% and above</span>
+            <span>*The lower the DBR is, the more it is better!</span>
+          </div>
+        </div>
+
+
+
+        <div class="row-start-2 border border-black">
+          <div class="grid grid-cols-2 text-center font-bold border-b border-black divide-x divide-black">
+            <div>
+              <span>INCOME STATUS</span>
+            </div>
+            <div>
+              <span>EXPENSES </span> <span>(AMOUNT)</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 divide-x divide-black">
+            <!-- LEFT SIDE -->
+            <div class="flex flex-col pl-2">
+              <label for="incomestatus_class_a" class="flex items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="incomestatus_class_a" 
+                  id="incomestatus_class_a"
+                  <?= cir.is_Class && cir.is_Class.includes('CLASS A') ? 'checked' : '' ?>
+                > <span> 
+                    <span class="font-bold">CLASS A</span> 
+                    (&#8369; 131,484 - &#8369; 219,14&gt;)
+                  </span>
+              </label>
+              <label for="incomestatus_class_b" class="flex items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="incomestatus_class_b" 
+                  id="incomestatus_class_b"
+                  <?= cir.is_Class && cir.is_Class.includes('CLASS B') ? 'checked' : '' ?>
+                > <span> 
+                    <span class="font-bold">CLASS B</span> 
+                    (&#8369; 76,669 - &#8369; 131,484)
+                  </span>
+              </label>
+              <label for="incomestatus_class_c" class="flex items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="incomestatus_class_c" 
+                  id="incomestatus_class_c"
+                  <?= cir.is_Class && cir.is_Class.includes('CLASS C') ? 'checked' : '' ?>
+                > <span> 
+                    <span class="font-bold">CLASS C</span> 
+                    (&#8369; 43,828 - &#8369; 76,669)
+                  </span>
+              </label>
+              <label for="incomestatus_class_d" class="flex items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="incomestatus_class_d" 
+                  id="incomestatus_class_d"
+                  <?= cir.is_Class && cir.is_Class.includes('CLASS D') ? 'checked' : '' ?>
+                > <span> 
+                    <span class="font-bold">CLASS D</span> 
+                    (&#8369; 21,194 - &#8369; 43,828)
+                  </span>
+              </label>
+              <label for="incomestatus_class_e" class="flex items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="incomestatus_class_e" 
+                  id="incomestatus_class_e"
+                  <?= cir.is_Class && cir.is_Class.includes('CLASS E') ? 'checked' : '' ?>
+                > <span> 
+                    <span class="font-bold">CLASS E</span> 
+                    (&lt;&#8369; 10,957 - &#8369; 21,194)
+                  </span>
+              </label>
+            </div>
+
+            <!-- RIGHT SIDE -->
+            <div class="flex flex-col pl-2 pb-1 pr-1">
+              <label for="expense_rent" class="inline-flex whitespace-nowrap items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="expense_rent" 
+                  id="expense_rent_checkbox"
+                 <?= cir.isRent ? 'checked' : '' ?>
+                > 
+                <span class="font-bold">RENT:</span>
+                <input 
+                  type="text" 
+                  name="expense_rent" 
+                  id="expense_rent_input"
+                  class="w-full border-b border-black"
+                  value="<?= cir.exp_Rent || '' ?>"
+                >
+              </label>
+              <label for="expense_carloan" class="inline-flex whitespace-nowrap items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="expense_carloan" 
+                  id="expense_carloan_checkbox"
+                  <?= cir.isCarLoan ? 'checked' : '' ?>
+                > 
+                <span class="font-bold">CAR LOAN:</span>
+                <input 
+                  type="text" 
+                  name="expense_carloan" 
+                  id="expense_carloan_input"
+                  class="w-full border-b border-black"
+                  value="<?= cir.exp_CarLoan || '' ?>"
+                >
+              </label>
+              <label for="expense_creditcard" class="inline-flex whitespace-nowrap items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="expense_creditcard" 
+                  id="expense_creditcard_checkbox"
+                  <?= cir.isCreditCard ? 'checked' : '' ?>
+                > 
+                <span class="font-bold">CREDIT CARD:</span>
+                <input 
+                  type="text" 
+                  name="expense_creditcard" 
+                  id="expense_creditcard_input"
+                  class="w-full border-b border-black"
+                  value="<?= cir.exp_CreditCard || '' ?>"
+                >
+              </label>
+              <label for="expense_housingloan" class="inline-flex whitespace-nowrap items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="expense_housingloan" 
+                  id="expense_housingloan_checkbox"
+                  <?= cir.isHousingLoan ? 'checked' : '' ?>
+                > 
+                <span class="font-bold">HOUSING LOAN:</span>
+                <input 
+                  type="text" 
+                  name="expense_housingloan" 
+                  id="expense_housingloan_input"
+                  class="w-full border-b border-black"
+                  value="<?= cir.exp_HousingLoan || '' ?>"
+                >
+              </label>
+              <label for="expense_others" class="inline-flex whitespace-nowrap items-center gap-1">
+                <input 
+                  type="checkbox" 
+                  name="expense_others" 
+                  id="expense_others_checkbox"
+                  <?= cir.isOthers ? 'checked' : '' ?>
+                > 
+                <span class="font-bold">OTHERS: <span class="font-normal text-[9px]">(Specify)</span></span>
+                <input 
+                  type="text" 
+                  name="expense_others" 
+                  id="expense_others_input"
+                  class="w-full border-b border-black"
+                  value="<?= cir.exp_Others || '' ?>"
+                >
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- PAGE 2 OUT OF 2 -->
+
+
+  <div class="paper">
+    <div class="maker__banner">
+      RESIDENCE DESCRIPTION (CONDITION)
+    </div>
+    
+    <div class="grid grid-cols-[2fr_4fr] items-stretch">
+      
+      <!-- TYPE OF RESIDENCE -->
+      <!-- LEFT PANEL -->
+      <div class="border border-black">
+        <div class=" text-center font-bold border-b border-black">
+          <span>TYPE OF RESIDENCE</span>
+        </div>
+
+        <div class="grid grid-cols-2 px-1 py-1">
+          <!-- LEFT SIDE -->
+          <div class="flex flex-col">
+            <label for="tor_owned" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="tor_owned" 
+                id="tor_owned"
+                <?= cir.tor_TypeOfRes === 'Owned' ? 'checked' : '' ?>
+              >
+              OWNED
+            </label>
+
+            <label for="tor_rent" class="flex items-center gap-1">
+              <input type="checkbox" 
+                name="tor_rent" 
+                id="tor_rent"
+                <?= cir.tor_TypeOfRes === 'Rent' ? 'checked' : '' ?>
+              >
+              RENT
+            </label>
+            <span class="text-[9px]">
+              Monthly Rent:
+              <input 
+                type="text" 
+                name="tor_monthlyrent" 
+                id="tor_monthlyrent"
+                class="border-b border-black"
+                value="<?= cir.tor_MonthlyRent || '' ?>"
+              >
+            </span>
+            <span class="text-[9px]">
+              Landlord's Name:
+              <input 
+                type="text" 
+                name="tor_landlord" 
+                id="tor_landlord"
+                class="border-b border-black"
+                value="<?= cir.tor_LandLord || '' ?>"
+              >
+            </span>
+          </div>
+
+          <!-- RIGHT SIDE -->
+          <div class="flex flex-col">
+            <label for="tor_usedfree" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="tor_usedfree" 
+                id="tor_usedfree"
+                <?= cir.tor_TypeOfRes === 'Used Free' ? 'checked' : '' ?>
+              >
+              USED FREE
+            </label>
+            <span class="flex items-center text-[9px]">
+              Owner:
+              <input 
+                type="text" 
+                name="tor_usedfree_owner" 
+                id="tor_usedfree_owner"
+                class="w-full border-b border-black"
+                value="<?= cir.tor_Owner || '' ?>"
+              >
+            </span>
+
+            <label for="tor_mortgage" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="tor_mortgage" 
+                id="tor_mortgage"
+                <?= cir.tor_TypeOfRes === 'Mortgage' ? 'checked' : '' ?>
+              >
+              MORTGAGE
+            </label>
+            <span class="flex items-center text-[9px]">
+              &#8369: <!-- PESO SIGN -->
+              <input 
+                type="text" 
+                name="tor_mortgage_amount" 
+                id="tor_mortgage_amount"
+                class="w-full border-b border-black"
+                value="<?= cir.tor_MonthlyMortgage || '' ?>"
+              >
+            </span>
+
+            <label for="tor_others" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="tor_others" 
+                id="tor_others"
+                <?= cir.tor_TypeOfRes === 'Others' ? 'checked' : '' ?>
+              >
+              OTHERS
+            </label>
+            <span class="flex items-center text-[9px]">
+              Specify:
+              <input 
+                type="text" 
+                name="tor_others_specify" 
+                id="tor_others_specify"
+                class="w-full border-b border-black"
+                value="<?= cir.tor_OthersSpecify || '' ?>"
+              >
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="flex flex-col h-full row-span-5 border border-black">
+        <div class=" text-center font-bold border-b border-black">
+          <span>
+            SKETCH MAP OF APPLICANT'S RESIDENCE
+            <span class="text-[9px]">
+              (please use other sheet for additional INFORMATION)
+            </span>
+          </span>
+        </div>
+
+        <div class="relative flex-1">
+          <div class="flex items-center justify-center h-full">
+            <img
+              src="<?= cir.cirSketch_Address?>"
+              class="w-[300px] h-[350px] object-contain"
+              alt="Sketch of Residence"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- RESIDENCE STATUS (OLD-NEW) -->
+      <div class="grid grid-cols-2 py-1 border border-black">
+        <label for="tor_oldresidence" class="flex items-center justify-center gap-1">
+          <input 
+            type="checkbox" 
+            name="tor_oldresidence" 
+            id="tor_oldresidence"
+            <?= cir.tor_ResidenceStatus === 'Old' ? 'checked' : '' ?>
+          >
+          OLD
+        </label>
+
+        <label for="tor_newresidence">
+          <input 
+            type="checkbox" 
+            name="tor_newresidence"   
+            id="tor_newresidence"
+            <?= cir.tor_ResidenceStatus === 'New' ? 'checked' : '' ?>
+          >
+          NEW
+        </label>
+      </div>
+
+      <!-- HOUSING TYPE -->
+      <div class="grid grid-cols-2 px-1 py-1 border border-black">
+        <!-- LEFT SIDE -->
+        <div class="flex flex-col">
+          <label for="ht_twostorey" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="ht_twostorey" 
+              id="ht_twostorey"
+              <?= cir.tor_HousingType === 'Bungalow' ? 'checked' : '' ?>
+            >
+            2 STOREY
+          </label>
+          <label for="ht_building" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="ht_building" 
+              id="ht_building"
+              <?= cir.tor_HousingType === '2 Storey' ? 'checked' : '' ?>
+            >
+            BUILDING
+          </label>
+        </div>
+        
+        <!-- RIGHT SIDE -->
+        <div class="flex flex-col">
+          <label for="ht_bungalow" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="ht_bungalow" 
+              id="ht_bungalow"
+              <?= cir.tor_HousingType === 'Building' ? 'checked' : '' ?>
+            >
+            BUNGALOW
+          </label>
+          <label for="ht_others" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="ht_others" 
+              id="ht_others"
+              <?= cir.tor_HousingType === 'Others' ? 'checked' : '' ?>
+            >
+            OTHERS
+          </label>
+
+          <span class="flex items-center text-[9px]">
+            specify:
+            <input 
+              type="text" 
+              name="ht_others_specify" 
+              id="ht_others_specify"
+              class="w-full border-b border-black"
+              value="<?= cir.tor_HouseTypeOthers || '' ?>"
+            >
+          </span>
+        </div>
+      </div>
+
+      <!-- RESIDENCE LOCATION -->
+      <div class="grid grid-cols-2 px-1 py-1 border border-black">
+        <!-- LEFT SIDE -->
+        <div class="flex flex-col">
+          <label for="rl_residential" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_residential" 
+              id="rl_residential"
+              <?= cir.tor_ResidenceLoc === 'Residential' ? 'checked' : '' ?>
+            >
+            RESIDENTIAL
+          </label>
+
+          <label for="rl_apartment" class="flex items-center gap-1"> 
+            <input 
+              type="checkbox" 
+              name="rl_apartment" 
+              id="rl_apartment"
+              <?= cir.tor_ResidenceLoc === 'Apartment' ? 'checked' : '' ?>
+            >
+            APARTMENT
+          </label>
+
+          <label for="rl_condominium" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_condominium" 
+              id="rl_condominium"
+              <?= cir.tor_ResidenceLoc === 'Condominium' ? 'checked' : '' ?>
+            >
+            CONDOMINIUM
+          </label>
+
+          <label for="rl_subdivision" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_subdivision" 
+              id="rl_subdivision"
+              <?= cir.tor_ResidenceLoc === 'Subdivision' ? 'checked' : '' ?>
+            >
+            SUBDIVISION
+          </label>
+        </div>
+
+        <!-- RIGHT SIDE -->
+         <div class="flex flex-col" class="flex items-center gap-1">
+          <label for="rl_tenement">
+            <input 
+              type="checkbox" 
+              name="rl_tenement" 
+              id="rl_tenement"
+              <?= cir.tor_ResidenceLoc === 'Tenement' ? 'checked' : '' ?>
+            >
+            TENEMENT
+          </label>
+
+          <label for="rl_squatterarea" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_squatterarea" 
+              id="rl_squatterarea"
+              <?= cir.tor_ResidenceLoc === 'Squatter Area' ? 'checked' : '' ?>
+            >
+            SQUATTER AREA
+          </label>
+
+          <label for="rl_slumarea" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_slumarea" 
+              id="rl_slumarea"
+              <?= cir.tor_ResidenceLoc === 'Slum Area' ? 'checked' : '' ?>
+            >
+            SLUM AREA
+          </label>
+
+          <label for="rl_others" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rl_others" 
+              id="rl_others"
+              <?= cir.tor_ResidenceLoc === 'Others' ? 'checked' : '' ?>
+            >
+            OTHERS
+          </label>
+          <span class="flex items-center text-[9px]">
+            Specify:
+            <input 
+              type="text" 
+              name="rl_others_specify" 
+              id="rl_others_specify"
+              class="w-full border-b border-black"
+              value="<?= cir.tor_ResiLocOthers || '' ?>"
+            >
+          </span>
+         </div>
+      </div>
+
+      <!-- RESIDENCE MADE OF -->
+      <div class="grid grid-cols-2 px-1 py-1 border border-black">
+        <!-- LEFT SIDE -->
+        <div class="flex flex-col">
+          <label for="rmo_concrete" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rmo_concrete" 
+              id="rmo_concrete"
+              <?= cir.tor_MadeOf === 'Concrete' ? 'checked' : '' ?>
+            >
+            CONCRETE
+          </label>
+
+          <label for="rmo_semiconcrete" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rmo_semiconcrete" 
+              id="rmo_semiconcrete"
+              <?= cir.tor_MadeOf === 'Semi-Concrete' ? 'checked' : '' ?>
+            >
+            SEMI-CONCRETE
+          </label>
+
+          <label for="rmo_wooden" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rmo_wooden" 
+              id="rmo_wooden"
+              <?= cir.tor_MadeOf === 'Wooden' ? 'checked' : '' ?>
+            >
+            WOODEN
+          </label>
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="flex flex-col">
+          <label for="rmo_shanty" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rmo_shanty" 
+              id="rmo_shanty"
+              <?= cir.tor_MadeOf === 'Shanty' ? 'checked' : '' ?>
+            >
+            SHANTY
+          </label>
+          
+          <label for="rmo_others" class="flex items-center gap-1">
+            <input 
+              type="checkbox" 
+              name="rmo_others" 
+              id="rmo_others" 
+              <?= cir.tor_MadeOf === 'Others' ? 'checked' : '' ?>
+            >
+            OTHERS
+          </label>
+
+          <span class="flex items-center text-[9px]">
+            Specify:
+            <input 
+              type="text" 
+              name="rmo_others_specify" 
+              id="rmo_others_specify"
+              class="w-full border-b border-black"
+              value="<?= cir.tor_MadeOfOthers || '' ?>"
+            >
+          </span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ACCESSIBILITY | PARKING | LANDMARK -->
+    <div class="grid grid-cols-3 border border-black">
+      <div class="border-r border-black">
+
+        <!-- ACCESSIBILITY -->
+        <div class="text-center font-bold border-b border-black">
+          ACCESSIBILITY
+        </div>
+
+        <div class="grid grid-cols-2 pl-1 pt-1">
+          <!-- LEFT SIDE -->
+          <div class="flex flex-col">
+            <label for="access_jeepney" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="access_jeepney" 
+                id="access_jeepney"
+                <?= (cir.tor_Access || '').includes('Bus/Jeepney') ? 'checked' : '' ?>
+              >
+              BUS/JEEPNEY
+            </label>
+
+            <label for="access_private" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="access_private" 
+                id="access_private"
+                <?= (cir.tor_Access || '').includes('Tricycle') ? 'checked' : '' ?>
+              >
+              PRIVATE VEHICLE
+            </label>
+          </div>
+
+          <!-- RIGHT SIDE -->
+          <div class="flex flex-col">
+            <label for="access_tricycle" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="access_tricycle" 
+                id="access_tricycle"
+                <?= (cir.tor_Access || '').includes('Private Vehicle') ? 'checked' : '' ?>
+              >
+              TRICYCLE</label>
+
+            <label for="access_inaccessble">
+              <input 
+                type="checkbox" 
+                name="access_inaccessble" 
+                id="access_inaccessble"
+                <?= cir.tor_Access === 'Inaccessible' ? 'checked' : '' ?>
+              >
+              INACCESSIBLE
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARKING -->
+      <div class="border-r border-black pb-1">
+        <div class="text-center font-bold border-b border-black">
+          PARKING
+        </div>
+
+        <div class="grid grid-rows-2 pt-1">
+          <div class="flex justify-center gap-8">
+            <label for="parking_with" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="parking_with" 
+                id="parking_with"
+                <?= cir.tor_Parking === 'With Parking' ? 'checked' : '' ?>
+              >
+              WITH
+            </label>
+            <label for="parking_without" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="parking_without" 
+                id="parking_without"
+                <?= cir.tor_Parking === 'Without Parking Area' ? 'checked' : '' ?>
+              >
+              WITHOUT
+            </label>
+          </div>
+
+          <span class="flex items-center text-[10px] pl-1">
+            LOCATION: 
+            <input 
+              type="text" 
+              name="parking_location" 
+              id="parking_location"
+              class="w-full border-b border-black pl-1 mr-2"
+              value="<?= cir.tor_ParkingLoc || '' ?>"
+            >
+          </span>
+        </div>
+      </div>
+
+
+      <!-- LANDMARK -->
+      <div>
+        <div class="text-center font-bold border-b border-black">
+          LANDMARK
+        </div>
+
+        <div class="grid grid-rows-2 pt-1 pl-1">
+          <span class="inline-flex whitespace-nowrap">
+            LANDMARK NAME:
+            <input 
+              type="text" 
+              name="landmark_name" 
+              id="landmark_name"
+              class="w-full pl-1 mr-1 border-b border-black"
+              value="<?= cir.tor_LandMarkName || '' ?>"
+            >
+          </span>
+
+          <span class="inline-flex whitespace-nowrap">
+            DISTANCE FROM LANDMARK (KM):
+            <input 
+              type="text" 
+              name="landmark_distance" 
+              id="landmark_distance"
+              class="w-full pl-1 mr-1 border-b border-black"
+              value="<?= cir.tor_LandMarkDistance || '' ?>"
+            >
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLLATERAL -->
+    <div class="maker__banner">
+      COLLATERAL
+    </div>
+
+    <div class="grid grid-cols-1 grid-rows-2 border border-black pb-1">
+      <!-- ROW 1 -->
+      <div class="grid grid-cols-5 pl-1">
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_fan" 
+            id="collat_fan"
+            <?= (cir.tor_Items || '').includes('Electric Fan / Aircon') ? 'checked' : '' ?>
+          >
+          ELECTRIC FAN/AIRCON
+        </span>
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_ref" 
+            id="collat_ref"
+            <?= (cir.tor_Items || '').includes('Refrigerator / Freezer') ? 'checked' : '' ?>
+          >
+          REF/FREEZER
+        </span>
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox"
+            name="collat_washingmachine" 
+            id="collat_washingmachine"
+            <?= (cir.tor_Items || '').includes('Washing Machine') ? 'checked' : '' ?>
+          >
+          WASHING MACHINE
+        </span>
+        <span class="inline-flex whitespace-nowrap items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_mcunit" 
+            id="collat_mcunit"
+            <?= (cir.tor_Items || '').includes('Motorcycle Unit') ? 'checked' : '' ?>
+          >
+          MC UNIT:
+          <input 
+            type="text" 
+            name="collat_mcunit_input" 
+            id="collat_mcunit_input" 
+            class="w-full mr-2 border-b border-black"
+            value="<?= cir.tor_ColMCValue || '' ?>"
+          >
+        </span>
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_others" 
+            id="collat_others"
+            <?= (cir.tor_Items || '').includes('Others') ? 'checked' : '' ?>
+          >
+          OTHERS
+        </span>
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="grid grid-cols-5 pl-1 pt-1">
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_soundsystem" 
+            id="collat_soundsystem"
+            <?= (cir.tor_Items || '').includes('Sound System') ? 'checked' : '' ?>
+          >
+          SOUND SYSTEM
+        </span>
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_tv" 
+            id="collat_tv"
+            <?= (cir.tor_Items || '').includes('Television') ? 'checked' : '' ?>
+          >
+          TV
+        </span>
+        <span class="flex items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_desktop" 
+            id="collat_desktop"
+            <?= (cir.tor_Items || '').includes('Desktop / Laptop') ? 'checked' : '' ?>
+          >
+          DESKTOP/LAPTOP
+        </span>
+        <span class="inline-flex whitespace-nowrap items-center gap-1">
+          <input 
+            type="checkbox" 
+            name="collat_carunit" 
+            id="collat_carunit" 
+            <?= (cir.tor_Items || '').includes('Car Unit') ? 'checked' : '' ?>
+          >
+          CAR UNIT:
+          <input 
+            type="text" 
+            name="collat_carunit_input" 
+            id="collat_carunit_input" 
+            class="w-full mr-2 border-b border-black"
+            value="<?= cir.tor_ColCarValue || '' ?>"
+          >
+        </span>
+        <span class="flex items-center gap-1 text-[11px]">
+          Specify:
+          <input 
+            type="text" 
+            name="collat_specify" 
+            id="collat_specify"
+            class="w-full border-b border-black mr-2"
+            value="<?= cir.tor_ColOthers || '' ?>"
+          >
+        </span>
+      </div>
+    </div>
+
+
+    <!-- COLLATERAL -->
+    <div class="maker__banner">
+      CHARACTER CONFIRMATION AND CREDIT BACKGROUND
+    </div>
+
+    <div class="grid grid-cols-2 border border-black">
+      <!-- LEFT PANEL -->
+      <div class=" border-r border-black">
+        <div class="text-center border-b border-black">
+          <span class="font-bold">CREDIT BACKGROUND</span>
+        </div>
+
+        <div class="grid grid-cols-2 pl-1">
+          <div class="flex flex-col">
+            <label for="creditback_noloan" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_noloan" 
+                id="creditback_noloan"
+                <?= (cir.tor_CreditBG || '').includes('No Existing Loan') ? 'checked' : '' ?>
+              >
+              NO EXISTING LOAN
+            </label>
+            <label for="creditback_goodpayor" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_goodpayor" 
+                id="creditback_goodpayor"
+                <?= (cir.tor_CreditBG || '').includes('Good Payor') ? 'checked' : '' ?>
+              >
+              GOOD PAYOR
+            </label>
+            <label for="creditback_slowpayor" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_slowpayor" 
+                id="creditback_slowpayor"
+                <?= (cir.tor_CreditBG || '').includes('Slow Payor') ? 'checked' : '' ?>
+              >
+              SLOW PAYOR
+            </label>
+            <label for="creditback_heavilydebt" class="flex items-center gap-1"> 
+              <input 
+                type="checkbox" 
+                name="creditback_heavilydebt" 
+                id="creditback_heavilydebt"
+                <?= (cir.tor_CreditBG || '').includes('Heavily Indebted') ? 'checked' : '' ?>
+              >
+              HEAVILY INDEBTED
+            </label>
+          </div>
+
+          <div  class="flex flex-col">
+            <label for="creditback_frequentcollector" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_frequentcollector" 
+                id="creditback_frequentcollector"
+                <?= (cir.tor_CreditBG || '').includes('Frequented By Collectors') ? 'checked' : '' ?>
+              >
+              FREQUENTED BY COLLECTORS
+            </label>
+            <Label for="creditback_badcredit" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_badcredit" 
+                id="creditback_badcredit"
+                <?= (cir.tor_CreditBG || '').includes('With Bad Credit Standing') ? 'checked' : '' ?>
+              >
+              WITH BAD CREDIT STANDING
+            </Label>
+            <label for="creditback_reposses" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="creditback_frequentcollector" 
+                id="creditback_heavilydebt"
+                <?= (cir.tor_CreditBG || '').includes('With Repossession History') ? 'checked' : '' ?>
+              >
+              WTH REPOSSESSION HISTOTY
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div>
+        <div class="text-center border-b border-black">
+          <span class="font-bold">CREDIT BACKGROUND</span>
+        </div>
+
+        <div class="grid grid-cols-2">
+          <div class="flex flex-col pl-1">
+            <label for="Assess_goodrep" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_goodrep" 
+                id="Assess_goodrep"
+                <?= (cir.tor_CharacterAssess || '').includes('Good Reputation') ? 'checked' : '' ?>
+              >
+              GOOD REPUTATION
+            </label>
+
+            <label for="Assess_arrogant" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_arrogant"
+                id="Assess_arrogant"
+                <?= (cir.tor_CharacterAssess || '').includes('Arrogant') ? 'checked' : '' ?>
+              >
+              ARROGRANT
+            </label>
+
+            <label for="Assess_liar" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_liar" 
+                id="Assess_liar"
+                <?= (cir.tor_CharacterAssess || '').includes('Liar') ? 'checked' : '' ?>
+              >
+              LIAR
+            </label>
+
+            <label for="Assess_notorious" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_notorious" 
+                id="Assess_notorious"
+                <?= (cir.tor_CharacterAssess || '').includes('Notorious') ? 'checked' : '' ?>
+              >
+              NOTORIOUS
+            </label>
+
+            <label for="Assess_swindler" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_swindler" 
+                id="Assess_swindler"
+                <?= (cir.tor_CharacterAssess || '').includes('Swindler') ? 'checked' : '' ?>
+              >
+              SWINDLER
+            </label>
+          </div>
+
+          <div class="flex flex-col">
+            <label for="Assess_adulterous" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_adulterous" 
+                id="Assess_adulterous"
+                <?= (cir.tor_CharacterAssess || '').includes('Adulterous') ? 'checked' : '' ?>
+              >
+              ADULTEROUS
+            </label>
+
+            <label for="Assess_gambler" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_gambler" 
+                id="Assess_gambler"
+                <?= (cir.tor_CharacterAssess || '').includes('Gambler') ? 'checked' : '' ?>
+              >
+              GAMBLER
+            </label>
+
+            <label for="Assess_alcoholic" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="Assess_alcoholic" 
+                id="Assess_alcoholic"
+                <?= (cir.tor_CharacterAssess || '').includes('Alcoholic') ? 'checked' : '' ?>
+              >
+              ALCOHOLIC
+            </label>
+
+            <label for="Assess_drugaddic" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="assess_drugaddic" 
+                id="Assess_drugaddic"
+                <?= (cir.tor_CharacterAssess || '').includes('Drug Addicted') ? 'checked' : '' ?>
+              >
+              DRUG ADDICT
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2">
+        <!-- LEFT PANEL -->
+        <div class="border border-black">
+          <div class="text-center font-bold border-b border-black">
+            <span>PRE-CONFIRMATION</span>
+          </div>
+
+          <div class="grid grid-cols-1 p-1">
+            <div>
+              <div class="flex">
+                1.
+                <input 
+                  type="text" 
+                  name="precon_first" 
+                  id="precon_first" 
+                  class="w-full border-b border-black pl-1"
+                  value="<?= cir.precon_Info1 || '' ?>"
+                >
+              </div>
+              <div class="grid grid-cols-2 pt-1">
+                <div class="flex">
+                  <span>INFORMANT</span>
+                  <input 
+                    type="text" 
+                    name="precon_first_informant" 
+                    id="precon_first_informant" 
+                    class="w-full border-b border-black pl-1 mr-1"
+                    value="<?= cir.precon_Informant1 || '' ?>"
+                  >
+                </div>
+                <div class="inline-flex whitespace-nowrap">
+                  <span>CONTACT NO.</span>
+                  <input 
+                    type="text"
+                    name="precon_first_contact" 
+                    id="precon_first_contact" 
+                    class="w-full border-b border-black pl-1"
+                    value="<?= cir.precon_InformantNo1 || '' ?>"
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <div class="flex">
+                2.
+                <input 
+                  type="text" 
+                  name="precon_second" 
+                  id="precon_second" 
+                  class="w-full border-b border-black pl-1"
+                  value="<?= cir.precon_Info2 || '' ?>"
+                >
+              </div>
+              <div class="grid grid-cols-2 pt-1">
+                <div class="flex">
+                  <span>INFORMANT</span>
+                  <input 
+                    type="text" 
+                    name="precon_second_informant" 
+                    id="precon_second_informant" 
+                    class="w-full border-b border-black pl-1 mr-1"
+                    value="<?= cir.precon_Informant2 || '' ?>"
+                  >
+                </div>
+                <div class="inline-flex whitespace-nowrap">
+                  <span>CONTACT NO.</span>
+                  <input 
+                    type="text"
+                    name="precon_second_contact" 
+                    id="precon_second_contact" 
+                    class="w-full border-b border-black pl-1"
+                    value="<?= cir.precon_InformantNo2 || '' ?>"
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <div class="flex">
+                3.
+                <input 
+                  type="text" 
+                  name="precon_second" 
+                  id="precon_third" 
+                  class="w-full border-b border-black pl-1"
+                  value="<?= cir.precon_Info3 || '' ?>"
+                >
+              </div>
+              <div class="grid grid-cols-2 pt-1">
+                <div class="flex">
+                  <span>INFORMANT</span>
+                  <input 
+                    type="text" 
+                    name="precon_third_informant" 
+                    id="precon_third_informant" 
+                    class="w-full border-b border-black pl-1 mr-1"
+                    value="<?= cir.precon_Informant3 || '' ?>"
+                  >
+                </div>
+                <div class="inline-flex whitespace-nowrap">
+                  <span>CONTACT NO.</span>
+                  <input 
+                    type="text"
+                    name="precon_third_contact" 
+                    id="precon_third_contact" 
+                    class="w-full border-b border-black pl-1"
+                    value="<?= cir.precon_InformantNo3 || '' ?>"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class=" border border-l-0 border-black">
+         <div class="text-center font-bold border-b border-black">
+           <span>POST-CONFIRMATION</span>
+         </div>
+         <div class="grid grid-cols-1 p-1">
+           <div>
+             <div class="flex">
+               1.
+               <input 
+                 type="text" 
+                 name="postcon_first" 
+                 id="postcon_first" 
+                 class="w-full border-b border-black pl-1"
+                 value="<?= cir.postcon_Info1 || '' ?>"
+               >
+             </div>
+             <div class="grid grid-cols-2 pt-1">
+               <div class="flex">
+                 <span>INFORMANT</span>
+                 <input 
+                   type="text" 
+                   name="postcon_first_informant" 
+                   id="postcon_first_informant" 
+                   class="w-full border-b border-black pl-1 mr-1"
+                   value="<?= cir.postcon_Informant1 || '' ?>"
+                 >
+               </div>
+               <div class="inline-flex whitespace-nowrap">
+                 <span>CONTACT NO.</span>
+                 <input 
+                   type="text"
+                   name="postcon_first_contact" 
+                   id="postcon_first_contact" 
+                   class="w-full border-b border-black pl-1"
+                   value="<?= cir.postcon_InformantNo1 || '' ?>"
+                 >
+               </div>
+             </div>
+           </div>
+
+           <div class="pt-2">
+             <div class="flex">
+               2.
+               <input 
+                 type="text" 
+                 name="postcon_second" 
+                 id="postcon_second" 
+                 class="w-full border-b border-black pl-1"
+                 value="<?= cir.postcon_Info2 || '' ?>"
+               >
+             </div>
+             <div class="grid grid-cols-2 pt-1">
+               <div class="flex">
+                 <span>INFORMANT</span>
+                 <input 
+                   type="text" 
+                   name="postcon_second_informant" 
+                   id="postcon_second_informant" 
+                   class="w-full border-b border-black pl-1 mr-1"
+                   value="<?= cir.postcon_Informant2 || '' ?>"
+                 >
+               </div>
+               <div class="inline-flex whitespace-nowrap">
+                 <span>CONTACT NO.</span>
+                 <input 
+                   type="text"
+                   name="postcon_second_contact" 
+                   id="postcon_second_contact" 
+                   class="w-full border-b border-black pl-1"
+                   value="<?= cir.postcon_InformantNo2 || '' ?>"
+                 >
+               </div>
+             </div>
+           </div>
+
+           <div class="pt-2">
+             <div class="flex">
+               3.
+               <input 
+                 type="text" 
+                 name="postcon_third" 
+                 id="postcon_third" 
+                 class="w-full border-b border-black pl-1"
+                 value="<?= cir.postcon_Info3 || '' ?>"
+               >
+             </div>
+             <div class="grid grid-cols-2 pt-1">
+               <div class="flex">
+                 <span>INFORMANT</span>
+                 <input 
+                   type="text" 
+                   name="postcon_third_informant" 
+                   id="postcon_third_informant" 
+                   class="w-full border-b border-black pl-1 mr-1"
+                   value="<?= cir.postcon_Informant3 || '' ?>"
+                 >
+               </div>
+               <div class="inline-flex whitespace-nowrap">
+                 <span>CONTACT NO.</span>
+                 <input 
+                   type="text"
+                   name="postcon_third_contact" 
+                   id="postcon_third_contact" 
+                   class="w-full border-b border-black pl-1"
+                   value="<?= cir.postcon_InformantNo3 || '' ?>"
+                 >
+               </div>
+             </div>
+           </div>
+         </div>
+        </div>
+      </div>
+      
+      <!-- RECOMMENDATION -->
+      <div class="maker__banner">
+        RECOMMENDATION
+      </div>
+
+      <div class="border border-black px-16">
+        <textarea class="lined-textarea w-full" readonly>
+          <?= cir.recommendation || '' ?>
+        </textarea>
+      </div>
+
+      <!-- SIGNATORIES -->
+      <div class="grid grid-cols-3">
+
+        <!-- CI/AA -->
+        <div class="border border-black">
+          <div class="text-center font-bold pt-1 border-b border-black mb-1">RECOMMENDATION</div>
+
+          <div class="flex flex-col pl-16">
+            <label for="recommend_approval_ci" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="recommend_approval_ci" 
+                id="recommend_approval_ci"
+              >
+              APPROVAL
+            </label>
+            <label for="recommend_disapproval_ci">
+              <input 
+                type="checkbox" 
+                name="recommend_disapproval_ci" 
+                id="recommend_disapproval_ci"
+              >
+              DISAPPROVAL
+            </label>
+          </div>
+
+          <div>
+            <div class="mx-8 mt-4">
+              <input 
+                type="text" 
+                name="recom_ci" 
+                id="recom_ci" 
+                class="w-full text-center border-b border-black"
+                value="<?= cir.collector || '' ?>"
+              >
+            </div>
+            <div class="flex justify-center font-bold">
+              CI/AA
+            </div>
+          </div>
+        </div>
+
+        <!-- BM/OIC -->
+        <div class="border border-black">
+          <div class="text-center font-bold pt-1 border-b border-black mb-1">RECOMMENDATION</div>
+
+          <div class="flex flex-col pl-16">
+            <label for="recommend_approval_bm" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="recommend_approval_bm" 
+                id="recommend_approval_bm"
+              >
+              APPROVAL
+            </label>
+            <label for="recommend_disapproval_bm">
+              <input 
+                type="checkbox" 
+                name="recommend_disapproval_bm" 
+                id="recommend_disapproval_bm"
+              >
+              DISAPPROVAL
+            </label>
+          </div>
+
+          <div>
+            <div class="mx-8 mt-4">
+              <input 
+                type="text" 
+                name="recom_ci" 
+                id="recom_bm" 
+                class="w-full border-b border-black"
+              >
+            </div>
+            <div class="flex justify-center font-bold">
+              BM/OIC
+            </div>
+          </div>
+        </div>
+
+
+        <!-- AREA MANAGER / REGIONAL MANAGER -->
+        <div class="border border-black">
+          <div class="text-center font-bold pt-1 border-b border-black mb-1">RECOMMENDATION</div>
+
+          <div class="flex flex-col pl-16">
+            <label for="recommend_approval_am" class="flex items-center gap-1">
+              <input 
+                type="checkbox" 
+                name="recommend_approval_am" 
+                id="recommend_approval_am"
+              >
+              APPROVAL
+            </label>
+            <label for="recommend_disapproval_am">
+              <input 
+                type="checkbox" 
+                name="recommend_disapproval_am" 
+                id="recommend_disapproval_am"
+              >
+              DISAPPROVAL
+            </label>
+          </div>
+
+          <div>
+            <div class="mx-8 mt-4">
+              <input 
+                type="text" 
+                name="recom_ci" 
+                id="recom_am" 
+                class="w-full border-b border-black"
+              >
+            </div>
+            <div class="flex justify-center font-bold">
+              AREA MANAGER/REGIONAL MANAGER
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+      input.readOnly = true;
+    })
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.style.pointerEvents = 'none';
+    });
+  </script>
+</body>
+</html>

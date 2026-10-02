@@ -1,0 +1,1386 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Credit Application Form</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+    ► Layout & display
+    ► Box model / sizing
+    ► Typography
+    ► Background / color / border
+    ► Effects / state
+-->
+
+    <style>
+      /* ==================== GLOBAL TIGHTENING ==================== */
+      * {
+        margin: 0;
+        padding: 0;
+        line-height: 1.25;
+      }
+
+      body {
+        box-sizing: border-box;
+        font-family: calibri;
+        font-size: 12px;
+        background-color: #f3f3f3;
+      }
+
+      input[type="text"] {
+        text-transform: uppercase;
+        font-family: Calibri;
+        font-size: 11.8px;
+      }
+
+      /* ==================== FINANCIAL DETAILS ==================== */
+
+      .fd-div {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .fd-label {
+        font-weight: bold;
+        font-size: 12px;
+      }
+
+      .fd-input {
+        border: none;
+        border-bottom: 1px solid black;
+        outline: none;
+        font-size: 12px;
+        text-transform: uppercase;
+
+        min-width: 0;
+        box-sizing: border-box;
+      }
+
+      /* ==================== APPLICATION TYPE ==================== */
+
+      .app-type-div {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .app-type-checkbox {
+        align-items: center;
+        gap: 4px;
+      }
+
+      .container-id {
+        border: 1px dashed grey;
+      }
+
+      .sketch-address {
+        text-align: center;
+        margin-top: 50px;
+      }
+
+      .sketch-address > span {
+        font-weight: bold;
+      }
+
+      /* ==================== SKETCH ==================== */
+
+      .sketch-img-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 516px;
+        min-width: 516px;
+        max-width: 516px;
+        height: 416px;
+        margin: 0 auto;
+      }
+
+      .sketch-img-container img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      /* ==================== PERSONAL REFERENCE GRID ==================== */
+      #personal-ref {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr;
+        grid-template-rows: repeat(6, auto);
+        gap: 1px;
+        background: black;
+        /* grid lines */
+        border: 1px solid black;
+      }
+
+      #personal-ref > div {
+        background: white;
+        padding: 4px;
+        /* slightly more readable than 4px left only */
+        font-weight: bold;
+      }
+
+      /* ==================== PERSONAL REFERENCE INPUT ==================== */
+      #credit-line input[type="text"] {
+        border: none;
+        border-bottom: 1px solid black;
+        margin-bottom: 1px;
+      }
+
+      div.border-black.p-1.text-center {
+        padding: 0.4px 0 !important;
+      }
+
+      /* ==================== PAPER (Screen Preview - Auto Centered) ==================== */
+      .paper {
+        width: 8.5in;
+        min-height: 13in;
+        padding: 0.25in;
+        margin: 40px auto;
+        /* This is the key for auto-centering */
+        background: white;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
+        transform-origin: center top;
+        position: relative;
+        overflow: visible;
+      }
+
+      @media print {
+        @page {
+          size: 8.5in 13in;
+          /* Exact Folio / Long Bond size used in the Philippines */
+          margin: 0;
+          /* No printer margins – full paper area used */
+        }
+
+        html,
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: white !important;
+          height: 100%;
+        }
+
+        .paper {
+          /* Force exact paper dimensions */
+          width: 8.5in !important;
+          min-height: 13in !important;
+          /* height: auto !important; */
+          /* allows content to breathe if slightly tall */
+
+          /* Remove screen preview styling */
+          margin: 0 !important;
+          box-shadow: none !important;
+          background-color: white !important;
+          overflow: visible !important;
+
+          /* Keep your original inner padding as the printable margin */
+          padding: 0.25in !important;
+
+          page-break-inside: avoid;
+          page-break-after: avoid;
+        }
+
+        /* Remove the extra Tailwind m-4 margin inside the paper (it adds ~1rem extra) */
+        .paper > div.m-4 {
+          margin: 12px 0 0 4px !important;
+          padding: 0 !important;
+        }
+
+        /* Make sure all text, borders and inputs print sharply */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        input[type="text"],
+        input[type="checkbox"],
+        textarea {
+          border-color: black !important;
+          color: black !important;
+          background: transparent !important;
+        }
+
+        /* Optional: hide the sketch section if you ever uncomment it (prevents second page) */
+        /* .sketch-img-container { display: none !important; } */
+
+        /* Force everything to stay on ONE page (Folio is tall enough for your form) */
+        .paper * {
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- PAPER -->
+    <div class="paper bg-white shadow-xl px-4 py-4">
+      <div class="m-2">
+        <div class="grid grid-cols-[5fr_1fr] mb-1">
+          <div>
+            <!-- TITLE & SUBTITLE-->
+            <div class="flex flex-col leading-tight">
+              <h1 class="text-[16px] font-bold">CREDIT APPLICATION FORM</h1>
+              <h3 class="text-[14px] font-bold">STRICTLY CONFEDENTIAL</h3>
+
+              <!-- APPLICATION-->
+              <div class="flex gap-3">
+                <label 
+                  for="applicant_maker" 
+                  class="flex items-center gap-1 font-bold"
+                >
+                  <input
+                    type="checkbox"
+                    name="applicant_maker"
+                    id="applicant_maker"
+                    <?= applicant.applicant === 'Maker' ? 'checked' : '' ?>
+                  />
+                  <span>MAKER</span>
+                </label>
+
+                <label
+                  for="applicant_comaker"
+                  class="flex items-center gap-1 font-bold"
+                >
+                  <input
+                    type="checkbox"
+                    name="applicant_comaker"
+                    id="applicant_comaker"
+                    <?= applicant.applicant === 'Co-Maker' ? 'checked' : '' ?>
+                  />
+                  <span>CO-MAKER</span>
+                </label>
+
+                <label for="applicant_whom">
+                  TO WHOM?:
+                  <input
+                    type="text"
+                    name="applicant_whom"
+                    id="applicant_whom"
+                    class="w-[14rem] border-b border-black"
+                    value="<?= applicant.toWhom || '' ?>"
+                  />
+                </label>
+              </div>
+
+              <!-- FINANCING DETAILS-->
+              <div class="mt-1">
+                
+                <!-- ROW 1-->
+                <div class="flex gap-[6px] mt-1">
+                  <div>
+                    <label for="fd_brand" class="fd-label">BRAND</label>
+                    <input
+                      type="text"
+                      name="fd_brand"
+                      id="fd_brand"
+                      class="fd-input"
+                      value="<?= applicant.fd_Brand || '' ?>"
+                    />
+                  </div>
+                  <div>
+                    <label for="fd_dp" class="fd-label">DP</label>
+                    <input
+                      type="text"
+                      name="fd_dp"
+                      id="fd_dp"
+                      class="fd-input"
+                      value="<?= applicant.fd_DP || '' ?>"
+                    />
+                  </div>
+                  <div>
+                    <label for="fd_mi" class="fd-label">MI</label>
+                    <input
+                      type="text"
+                      name="fd_mi"
+                      id="fd_mi"
+                      class="fd-input"
+                      value="<?= applicant.fd_MI || '' ?>"
+                    />
+                  </div>
+                </div>
+
+                <!-- ROW 2-->
+                <div class="flex gap-[2px] mt-1">
+                  <div>
+                    <label for="fd_unit" class="fd-label">UNIT</label>
+                    <input
+                      type="text"
+                      name="fd_unit"
+                      id="fd_unit"
+                      class="fd-input"
+                      value="<?= applicant.fd_Unit || '' ?>"
+                    />
+                  </div>
+                  <div>
+                    <label for="fd_terms" class="fd-label">TERMS</label>
+                    <input
+                      type="text"
+                      name="fd_terms"
+                      id="fd_terms"
+                      class="fd-input"
+                      value="<?= applicant.fd_Terms || '' ?>"
+                    />
+                  </div>
+                  <div>
+                    <label for="fd_purpose" class="fd-label">PURPOSE</label>
+                    <input
+                      type="text"
+                      name="fd_purpose"
+                      id="fd_purpose"
+                      class="fd-input"
+                      value="<?= applicant.fd_Purpose || '' ?>"
+                    />
+                  </div>
+                  <div>
+                    <label for="fd_user" class="fd-label">USER</label>
+                    <input
+                      type="text"
+                      name="fd_user"
+                      id="fd_user"
+                      class="fd-input"
+                      value="<?= applicant.fd_User || '' ?>"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-2 border-dashed border-black mx-1 flex items-center justify-center">
+            <img src="<?= applicant.idPic ?>" class="h-24 w-24" />
+          </div>
+        </div>
+
+        <!-- APPLICANT TYPE -->
+        <div class="flex gap-2 pl-1 border border-black whitespace-nowrap">
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app_type_walkin"
+              id="app_type_walkin"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'Walk-In' ? 'checked' : '' ?>
+            />
+            <label for="app_type_walkin" class="text-[11px]">WALK-IN</label>
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app_type_online"
+              id="app_type_online"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'Online' ? 'checked' : '' ?>
+            />
+            <label for="app_type_online" class="text-[11px]">ONLINE</label>
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app_type_marketing"
+              id="app_type_marketing"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'MKTG. Activity' ? 'checked' : '' ?>
+            />
+            <label for="app_type_marketing" class="text-[11px]"
+              >MKTG. ACTIVITY</label
+            >
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app-type-referral"
+              id="app-type-referral"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'Employee Referral' ? 'checked' : '' ?>
+            />
+            <label for="app-type-referral" class="text-[11px]"
+              >EMP. REFERRAL</label
+            >
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app-type-adc"
+              id="app-type-adc"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'ADC' ? 'checked' : '' ?>
+            />
+            <label for="app-type-adc" class="text-[11px]">ADC</label>
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app-type-infocenter"
+              id="app-type-infocenter"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'Info Center' ? 'checked' : '' ?>
+            />
+            <label for="app-type-infocenter" class="text-[11px]"
+              >INFO-CENTER</label
+            >
+          </div>
+
+          <div class="app-type-div">
+            <input
+              type="checkbox"
+              name="app-type-with-agent"
+              id="app-type-with-agent"
+              class="app-type-checkbox"
+              <?= applicant.typeOfApplicant === 'W/ Agent' ? 'checked' : '' ?>
+            />
+            <label for="app-type-with-agent" class="text-[11px]">W/AGENT</label>
+          </div>
+
+          <div class="app-type-div">
+            <label for="app-type-agent-name" class="text-[11px]">NAME:</label>
+            <input
+              type="text"
+              name="app-type-with-agent-name"
+              id="app-type-agent-name"
+              class="w-[200px] border-b border-black"
+              value="<?= applicant.agentName || '' ?>"
+            />
+          </div>
+        </div>
+
+        <!-- APPLICANT/CO-MAKER HEADER -->
+        <div
+          class="border border-black p-1 text-[14px] text-center bg-black text-white font-bold"
+        >
+          APPLICANT/CO-MAKER INFORMATION
+        </div>
+
+        <!-- APPLICANT/CO-MAKER INFORMATION -->
+        
+                  <div>
+            <div class="grid grid-cols-[8fr_2fr] auto-rows-auto">
+              
+              <!-- APPLICANT NAME / BIRTHDATE / AGE -->
+              <div
+                class="grid grid-cols-[100px_4fr_70px_100px] grid-rows-2 border border-black border-t-0"
+              >
+                <span class="pl-2 font-bold">APPLICANT NAME</span>
+                <div class="flex">
+                  <input type="text" class="text-center" value="<?= applicant.lastName || '' ?>"/>
+                  <input type="text" class="text-center" value="<?= applicant.firstName || '' ?>"/>
+                  <input type="text" class="text-center" value="<?= applicant.middleName || '' ?>"/>
+                </div>
+                <input type="text" class="text-center" value="<?= applicant.suffix || '' ?>"/>
+                <input type="text" class="text-center" value="<?= applicant.alias || '' ?>"/>
+
+                <div></div>
+
+                <div class="flex justify-evenly items-end text-[9px]">
+                  <span>LAST NAME</span>
+                  <span>FIRST NAME</span>
+                  <span>MIDDLE NAME</span>
+                </div>
+                <div class="flex justify-center items-end text-[9px]">
+                  <span>SUFFIX</span>
+                </div>
+                <div class="flex justify-center items-end text-[9px]">
+                  <span>ALLIAS/NICKNAME</span>
+                </div>
+              </div>
+              <div
+                class="grid grid-cols-[1fr_1fr] grid-rows-2 border border-black border-t-0 border-l-0"
+              >
+                <div>
+                  <span class="pl-2 font-bold">BIRTHDATE</span>
+                </div>
+                <div class="border-l border-black">
+                  <span class="pl-2 font-bold">AGE</span>
+                </div>
+
+                <input 
+                  type="text" 
+                  class="flex w-full text-center"
+                  value="<?= applicant.maker_Birthdate || '' ?>"
+                />
+                <input
+                  type="text"
+                  class="flex w-full text-center border-l border-black"
+                  value="<?= applicant.maker_Age || '' ?>"
+                />
+              </div>
+
+
+              <!-- PRESENT ADDRESS / BIRTHPLACE -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+                  <div>
+                    <span class="pl-2 font-bold">PRESENT ADDRESS </span
+                    ><span class="text-[9px]"
+                      >(House Number, Street Address,Barangay,
+                      Municipality/City, Province)</span
+                    >
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.maker_Present || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.maker_YOS1 || '' ?>"/>
+                </div>
+              </div>
+              <div class="border-b border-r border-black">
+                <span class="pl-2 font-bold">BIRTHPLACE</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.maker_BirthPlace || '' ?>"/>
+              </div>
+
+
+              <!-- PROVINCIAL ADDRESS / CELLPHONE NO. -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+                  <div>
+                    <span class="pl-2 font-bold">PROVINCIAL ADDRESS </span
+                    ><span class="text-[9px]"
+                      >(House Number, Street Address,Barangay,
+                      Municipality/City, Province)</span
+                    >
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.maker_Province || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.maker_YOS2 || '' ?>"/>
+                </div>
+              </div>
+              <div class="border-b border-r border-black">
+                <span class="pl-2 font-bold">CELLPHONE NO.</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.maker_CellNo || '' ?>"/>
+              </div>
+
+
+              <!-- PRRVIOUS ADDRESS / LANDLINE -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] auto-rows-auto">
+                  <div>
+                    <span class="pl-2 font-bold">PREVIOUS ADDRESS </span
+                    ><span class="text-[9px]"
+                      >(House Number, Street Address,Barangay,
+                      Municipality/City, Province)</span
+                    >
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.maker_Previous || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.maker_YOS3 || '' ?>"/>
+
+                  <div class="flex whitespace-nowrap pb-[0.5px]">
+                    <span class="pl-2 text-[9px]">Reason For Leaving: </span>
+                    <input
+                      type="text"
+                      class="w-[calc(100%-16px)] pl-2 border-b border-black"
+                      value="<?= applicant.maker_WhyLeave || '' ?>"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-r border-black">
+                <span class="pl-2 font-bold">RELIGION</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.maker_Religion || '' ?>"/>
+
+                <!-- NATIONALITY -->
+                <div class="border-t border-black">
+                  <span class="pl-2 font-bold">NATIONALITY</span>
+                </div>
+
+              </div>
+
+
+              <!-- CIVIL STATUS -->
+              <div>
+                <div class="grid grid-cols-[5fr_2fr] auto-rows-auto border border-black border-t-0">
+                  <div class="col-span-2 flex gap-8">
+                    <div class="pl-2 font-bold whitespace-nowrap">CIVIL STATUS</div>
+
+                    <div class="flex gap-3 whitespace-nowrap">
+                      <span class="flex items-center">
+                        <input type="checkbox" id="civil_single" <?= applicant.maker_Civil === 'Single' ? 'checked' : '' ?> > 
+                        SINGLE
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" id="civil_married" <?= applicant.maker_Civil === 'Married' ? 'checked' : '' ?> >
+                        MARRIED
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" id="civil_separated" <?= applicant.maker_Civil === 'Separated' ? 'checked' : '' ?> >
+                        SEPARATED
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" id="civil_livein" <?= applicant.maker_Civil === 'Live-In' ? 'checked' : '' ?> >
+                        LIVE-IN
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" id="civil_widow" <?= applicant.maker_Civil === 'Widow/ER' ? 'checked' : '' ?> >
+                        WIDOW/ER
+                      </span>
+                      <span class="flex items-center">
+                        YEAR: 
+                        <input type="text" class="border-b border-black text-center w-[70%]" value="<?= applicant.maker_YearWidow || '' ?>">
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- NATIONALITY INPUT FIELD -->
+              <div class="flex border-r border-black">
+                <input type="text" class="w-full text-center" value="<?= applicant.maker_Nationality || '' ?>">
+              </div>
+
+            </div>
+          </div>
+
+        <!-- CIVIL STATUS -->
+        
+
+
+        <!-- EDUCATIONAL ATTAINMENT / COURSE / RELATIVE WORKING AT STARBIKE -->
+        <div
+          class="grid grid-cols-[1.495fr_1fr] border border-b-0 border-black"
+        >
+          <div class="flex border-r border-black">
+            <span class="flex items-center whitespace-nowrap px-2 font-bold"
+              >EDUCATIONAL ATTAINMENT</span
+            >
+            <input type="text" class="w-full" value="<?= applicant.maker_Education || '' ?>">
+          </div>
+
+          <div class="flex justify-evenly">
+            <span>RELATIVE WORKING AT STARBIKE?</span>
+            <div class="flex gap-2">
+              <label for="rwas_yes" class="flex items-center gap-1">
+                <input type="checkbox" name="rwas_yes" id="rwas_yes" <?= applicant.maker_RWAS === 'Yes' ? 'checked' : '' ?> >
+                YES
+              </label>
+              <label for="rwas_no" class="flex items-center gap-1">
+                <input type="checkbox" name="rwas_no" id="rwas_no" <?= applicant.maker_RWAS === 'No' ? 'checked' : '' ?> >
+                NO
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-[1.495fr_1fr] border border-t-0 border-black"
+        >
+          <div class="flex border-t border-r border-black">
+            <span class="flex px-2 font-bold items-center">COURSE</span>
+            <input type="text" class="w-full" value="<?= applicant.maker_Course|| '' ?>" >
+          </div>
+
+          <div class="flex">
+            <span class="whitespace-nowrap pl-[17px] pr-1">IF YES, Name: </span>
+            <input type="text" class="w-full border-b border-black mb-[0.9px]" value="<?= applicant.maker_Name || '' ?>" >
+          </div>
+        </div>
+
+        <!-- EMPLOYMENT DETAILS -->
+        <div class="grid grid-cols-[1.5fr_1fr_1.67fr]">
+          <div class="border border-black">
+            <div class="flex flex-col border-b border-black">
+              <span class="pl-2 font-bold">EMPLOYER/BUSINESS NAME</span>
+              <input type="text" class="w-full px-2" value="<?= applicant.maker_EmpBusiName || '' ?>">
+            </div>
+            <div class="flex flex-col">
+              <span class="whitespace-nowrap pl-2 font-bold">
+                EMPLOYER ADDRESS
+                </span>
+              <textarea
+                name="aplicant_employer_address"
+                class="w-full resize-none px-2" readonly>
+                <?= applicant.maker_EmpBusiAdd || '' ?>
+              </textarea>
+            </div>
+          </div>
+
+          <div class="border border-l-0 border-black">
+            <div class="border-b border-black">
+              <span class="pl-2 font-bold">POSITION</span>
+              <input type="text" class="w-full px-2 text-center" value="<?= applicant.maker_Position || '' ?>">
+            </div>
+            <div class="border-b border-black">
+              <span class="pl-2 font-bold">LENGTH OF SERVICE</span>
+              <input type="text" class="w-full px-2 text-center" value="<?= applicant.maker_WorkService || '' ?>">
+            </div>
+            <div>
+              <span class="pl-2 font-bold">CONTACT NUMBER</span>
+              <input type="text" class="w-full px-2 text-center" value="<?= applicant.maker_WorkContact || '' ?>">
+            </div>
+          </div>
+
+          <div class="border border-l-0 border-black">
+            <div
+              class="text-center text-[10px] font-bold border-b border-black"
+            >
+              <span>SOURCE OF INCOME</span>
+            </div>
+
+            <div class="relative">
+              <div class="grid grid-cols-2 grid-rows-5">
+                <span class="text-center text-[10px] font-bold"
+                  >TYPE OF INCOME</span
+                >
+                <span class="text-center text-[10px] font-bold"
+                  >NET INCOME</span
+                >
+
+                <div>
+                  <span class="ml-2">1.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_TOI1 || '' ?>"
+                  />
+                </div>
+                <div>
+                  <span class="ml-2">1.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_Net1 || '' ?>"
+                  />
+                </div>
+
+                <div>
+                  <span class="ml-2">2.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_TOI2 || '' ?>"
+                  />
+                </div>
+                <div>
+                  <span class="ml-2">2.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_Net2 || '' ?>"
+                  />
+                </div>
+
+                <div>
+                  <span class="ml-2">3.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_TOI3 || '' ?>"
+                  />
+                </div>
+                <div>
+                  <span class="ml-2">3.</span>
+                  <input
+                    type="text"
+                    class="text-[10px] border-b border-black"
+                    value="<?= applicant.maker_Net3 || '' ?>"
+                  />
+                </div>
+
+                <div></div>
+                <div class="flex">
+                  <span class="whitespace-nowrap pl-2">TOTAL:</span>
+                  <input
+                    type="text"
+                    class="text-[10px] w-[99px] text-center border-b border-black"
+                    value="<?= applicant.maker_Total || '' ?>"
+                  />
+                </div>
+              </div>
+
+              <!-- CENTER LINE -->
+              <div
+                class="pointer-events-none absolute inset-y-0 left-1/2 border-l border-black"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <!-- VERTICAL LABEL -->
+          <div
+            class="absolute left-[-18px] top-[200px] -translate-y-1/2 [writing-mode:vertical-rl] rotate-180 text-[12px] tracking-wide whitespace-nowrap"
+          >
+            (CO-SIGNER CAN BE SPOUSE, PARENT OR SIBLING AND RELATIVE)
+          </div>
+
+          <!-- SPOUSE/CO-SIGNER INFORMATION -->
+          <div
+            class="border border-black p-1 text-[14px] text-center bg-black text-white font-bold"
+          >
+            SPOUSE/CO-SIGNER INFORMATION
+          </div>
+
+          <!-- SPOUSE/CO-SIGNER INFORMATION -->
+          <div>
+            <div class="grid grid-cols-[8fr_2fr] auto-rows-auto">
+              
+              <!-- SPOUSE/CO-SIGNER NAME / BIRTHDATE / AGE -->
+              <div
+                class="grid grid-cols-[100px_4fr_70px_100px] grid-rows-2 border border-black border-t-0"
+              >
+                <span class="pl-2 font-bold">APPLICANT NAME</span>
+                <div class="flex">
+                  <input type="text" class="text-center" value="<?= applicant.cosign_lastName || '' ?>"/>
+                  <input type="text" class="text-center" value="<?= applicant.cosign_firstName || '' ?>"/>
+                  <input type="text" class="text-center" value="<?= applicant.cosign_middleName || '' ?>"/>
+                </div>
+                <input type="text" class="text-center" value="<?= applicant.cosign_Suffix || '' ?>"/>
+                <input type="text" class="text-center" value="<?= applicant.cosign_Alias || '' ?>"/>
+
+                <div></div>
+
+                <div class="flex justify-evenly items-end text-[9px]">
+                  <span>LAST NAME</span>
+                  <span>FIRST NAME</span>
+                  <span>MIDDLE NAME</span>
+                </div>
+                <div class="flex justify-center items-end text-[9px]">
+                  <span>SUFFIX</span>
+                </div>
+                <div class="flex justify-center items-end text-[9px]">
+                  <span>ALLIAS/NICKNAME</span>
+                </div>
+              </div>
+              <div
+                class="grid grid-cols-[1fr_1fr] grid-rows-2 border border-black border-t-0 border-l-0"
+              >
+                <div>
+                  <span class="pl-2 font-bold">BIRTHDATE</span>
+                </div>
+                <div class="border-l border-black">
+                  <span class="pl-2 font-bold">AGE</span>
+                </div>
+
+                <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_Birthdate || '' ?>"/>
+                <input
+                  type="text"
+                  class="flex w-full text-center border-l border-black"
+                  value="<?= applicant.cosign_Age || '' ?>"
+                />
+              </div>
+
+
+              <!-- PRESENT ADDRESS / BIRTHPLACE -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+                  <div>
+                    <span class="pl-2 font-bold">PRESENT ADDRESS </span>
+                    <span class="text-[9px]">
+                      (House Number, Street Address, Barangay, Municipality/City, Province)
+                    </span >
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.cosign_Present || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_YOS1 || '' ?>"/>
+                </div>
+              </div>
+              <div class="border-b border-r border-black">
+                <span class="pl-2 font-bold">BIRTHPLACE</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_BirthPlace || '' ?>"/>
+              </div>
+
+
+              <!-- PROVINCIAL ADDRESS / CELLPHONE NO. -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] grid-rows-2">
+                  <div>
+                    <span class="pl-2 font-bold">PROVINCIAL ADDRESS </span>
+                    <span class="text-[9px]">
+                      (House Number, Street Address, Barangay, Municipality/City, Province)
+                    </span>
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.cosign_Province || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_YOS2 || '' ?>"/>
+                </div>
+              </div>
+              <div class="border-b border-r border-black">
+                <span class="pl-2 font-bold">CELLPHONE NO.</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_CellNo || '' ?>"/>
+              </div>
+
+
+              <!-- PRRVIOUS ADDRESS / LANDLINE -->
+              <div class="border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_1fr] grid-rows-3">
+                  <div>
+                    <span class="pl-2 font-bold">PREVIOUS ADDRESS </span>
+                    <span class="text-[9px]">
+                      (House Number, Street Address, Barangay, Municipality/City, Province)
+                    </span>
+                  </div>
+                  <span class="font-bold text-center">YEAR OF STAY</span>
+
+                  <input type="text" class="flex w-full pl-2" value="<?= applicant.cosign_Previous || '' ?>"/>
+                  <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_YOS3 || '' ?>"/>
+
+                  <div class="flex whitespace-nowrap pb-[0.5px]">
+                    <span class="pl-2 text-[9px]">Reason For Leaving: </span>
+                    <input
+                      type="text"
+                      class="w-[calc(100%-16px)] pl-2 border-b border-black"
+                      value="<?= applicant.cosign_WhyLeave || '' ?>"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="border-b border-r border-black">
+                <span class="pl-2 font-bold">LANDLINE</span>
+                <input type="text" class="flex w-full text-center" value="<?= applicant.cosign_Landline || '' ?>"/>
+              </div>
+
+              <!-- CIVIL STATUS -->
+              <div>
+                <div class="grid grid-cols-[5fr_2fr] auto-rows-auto border border-black border-t-0">
+                  <div class="col-span-2 flex gap-8">
+                    <div class="pl-2 font-bold whitespace-nowrap">CIVIL STATUS</div>
+
+                    <div class="flex gap-3 whitespace-nowrap">
+                      <span class="flex items-center">
+                        <input type="checkbox" /> 
+                        SINGLE
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" /> 
+                        MARRIED
+                        </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" /> 
+                        SEPARATED
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" /> 
+                        LIVE-IN
+                      </span>
+                      <span class="flex items-center">
+                        <input type="checkbox" /> 
+                        WIDOW/ER
+                      </span>
+                      <span class="flex items-center">
+                        YEAR: 
+                        <input type="text" class="border-b border-black text-center w-[70%]" />
+                      </span>
+                    </div>
+                  </div>
+
+
+                  <!-- EDUCATION AND HOUSEHOLD -->
+                  <div class="flex flex-col border-t border-r border-black">
+                    <span class="pl-2 font-bold">EDUCATIONAL ATTAINMENT</span>
+                    <input type="text" class="ml-2" value="<?= applicant.cosign_Education || '' ?>">
+                  </div>
+                  <div class="flex flex-col border-t border-black">
+                    <span class="pl-2 font-bold">NO. OF HOUSEHOLD</span>
+                    <input type="text" class="text-center" value="<?= applicant.cosign_HouseHold || '' ?>">
+                  </div>
+                  
+                </div>
+              </div>
+
+              <!-- RELIGION -->
+              <div class="row-span-1 flex flex-col border-r border-b border-black">
+                <span class="pl-2 pb-1 font-bold">RELIGION</span>
+                <input type="text" class="text-center" value="<?= applicant.cosign_Religion || '' ?>">
+              </div>
+
+
+              <!-- COURSE / DEPENDENTS -->
+              <div class=" border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_2fr]">
+                  <div class="flex flex-col border-r border-black">
+                    <span class="pl-2 font-bold">COURSE</span>
+                    <input type="text" class="ml-2" value="<?= applicant.cosign_Course || '' ?>">
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="pl-2 font-bold">NO. OF DEPENDENTS</span>
+                    <input type="text" class="text-center" value="<?= applicant.cosign_Dependents || '' ?>">
+                  </div>
+                </div>
+              </div>
+
+              <!-- NATIONALITY -->
+              <div class="border-r border-b border-black">
+                <div class="flex flex-col">
+                  <span class="pl-2 font-bold">NATIONALITY</span>
+                  <input type="text" class="text-center" value="<?= applicant.cosign_Nationality || '' ?>">
+                </div>
+              </div>
+
+
+              <!-- EMPLOYER-BUSINESS NAME / POSITION -->
+              <div class=" border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_2fr]">
+                  <div class="flex flex-col border-r border-black">
+                    <span class="pl-2 font-bold">EMPLOYER/BUSINESS NAME</span>
+                    <input type="text" class="ml-2" value="<?= applicant.cosign_EmpBusiName || '' ?>">
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="pl-2 font-bold">POSITION</span>
+                    <input type="text" class="text-center" value="<?= applicant.cosign_Position || '' ?>">
+                  </div>
+                </div>
+              </div>
+
+              <!-- LENGTH OF SERVICES -->
+              <div class="border-r border-b border-black">
+                <div class="flex flex-col">
+                  <span class="pl-2 font-bold">LENGTH OF SERVICE</span>
+                  <input type="text" class="text-center" value="<?= applicant.cosign_WorkService || '' ?>">
+                </div>
+              </div>
+
+
+              <!-- EMPLOYER-BUSINESS ADDRESS / NET INCOME -->
+              <div class=" border border-black border-t-0">
+                <div class="grid grid-cols-[5fr_2fr]">
+                  <div class="flex flex-col border-r border-black">
+                    <span class="pl-2 font-bold">EMPLOYER/BUSINESS ADDRESS</span>
+                    <input type="text" class="ml-2" value="<?= applicant.cosign_EmpBusiAdd || '' ?>">
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="pl-2 font-bold">NET INCOME</span>
+                    <input type="text" class="text-center" value="<?= applicant.cosign_NetIncome || '' ?>">
+                  </div>
+                </div>
+              </div>
+
+              <!-- LENGTH OF SERVICES -->
+              <div class="border-r border-b border-black">
+                <div class="flex flex-col">
+                  <span class="pl-2 font-bold">CONTACT NUMBER</span>
+                  <input type="text" class="text-center" value="<?= applicant.cosign_WorkContact || '' ?>">
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!--DEPENDENTS INFORMATION-->
+          <div
+            class="grid grid-cols-[2fr_70px_repeat(2,1.5fr)] grid-rows-4 gap-px divide-x divide-y divide-black border border-black"
+          >
+            <!--HEADER-->
+            <div class="">
+              <span class="pl-2 font-bold">CHILDRENS'S NAME</span>
+              <span class="text-[10px]">(YOUNGEST CHILD GOING TO SCHOOL)</span>
+            </div>
+            <div class="text-center border-r border-b border-black">
+              <span class="font-bold">AGE</span>
+            </div>
+            <div class="text-center border-r border-b border-black">
+              <span class="font-bold">SCHOOL</span>
+            </div>
+            <div class="text-center border-b border-black">
+              <span class="font-bold">SCHOOL ADDRESS</span>
+            </div>
+
+            <!--1ST CHILD-->
+            <div class="flex pl-2">
+              <span class="font-bold">1.</span>
+              <input type="text" class="w-full" value="<?= applicant.dep_Child1 || '' ?>"/>
+            </div>
+            <div class="flex"><input type="text" class="w-full text-center" value="<?= applicant.dep_FAge || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_FSchool || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_FAddress || '' ?>"/></div>
+
+            <!--2ND CHILD-->
+            <div class="flex pl-2">
+              <span class="font-bold">2.</span>
+              <input type="text" class="w-full" value="<?= applicant.dep_Child2 || '' ?>"/>
+            </div>
+            <div class="flex"><input type="text" class="w-full text-center" value="<?= applicant.dep_SAge || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_SSchool || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_SAddress || '' ?>"/></div>
+
+            <!--3ND CHILD-->
+            <div class="flex pl-2">
+              <span class="font-bold">3.</span>   
+              <input type="text" class="w-full" value="<?= applicant.dep_Child3|| '' ?>"/>
+            </div>
+            <div class="flex"><input type="text" class="w-full text-center" value="<?= applicant.dep_TAge || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_TAge || '' ?>"/></div>
+            <div class="flex"><input type="text" class="w-full" value="<?= applicant.dep_TAddress || '' ?>"/></div>
+          </div>
+        </div>
+
+        <!--CREDIT REFERENCES-->
+        <div class="border border-black p-1 text-[14px] text-center bg-black text-white font-bold">
+          CREDIT REFERENCES
+        </div>
+
+        <div class="border border-black">
+          <div><span class="pl-2 font-bold">MONTHLY PAYMENT BASIS</span></div>
+
+          <div class="pl-2 pb-[1px]">
+            <div class="grid grid-cols-3 gap-2">
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input 
+                  type="checkbox" 
+                  name="credit_rent" 
+                  id="credit_rent"
+                />
+                <span>RENT</span>
+                <span class="text-[9px]">Monthly:</span>
+                <input type="text" class="w-full border-b border-black" value="<?= applicant.cred_Rent || '' ?>"/>
+              </div>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="credit_creditcard"
+                  id="credit_creditcard"
+                />
+                <span>CREDIT CARD</span>
+                <span class="text-[9px]">Monthly:</span>
+                <input type="text" class="w-full border-b border-black" value="<?= applicant.cred_CreditCard || '' ?>"/>
+              </div>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="credit_carloan"
+                  id="credit_carloan"
+                />
+                <span>CAR LOAN</span>
+                <span class="text-[9px]">₱:</span>
+                <input type="text" class="w-full border-b border-black" value="<?= applicant.cred_CarLoan || '' ?>"/>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="credit_housingloan"
+                  id="credit_housingloan"
+                />
+                <span>HOUSING LOAN</span>
+                <span class="text-[9px]">₱:</span>
+                <input type="text" class="w-full border-b border-black" value="<?= applicant.cred_HousingLoan || '' ?>"/>
+              </div>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="credit_mcloan"
+                  id="credit_mcloan"
+                />
+                <span>MC LOAN</span>
+                <span class="text-[9px]">₱:</span>
+                <input type="text" class="w-full border-b border-black" value="<?= applicant.cred_MCLoan || '' ?>"/>
+              </div>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="credit_otherloan"
+                  id="credit_otherloan"
+                />
+                <span>OTHER LOANS</span>
+                <span class="text-[9px]">Specify:</span>
+                <input type="text" class="w-full border-b border-black" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--PERSONAL REFERENCES-->
+        <div
+          class="border border-black p-1 text-[14px] text-center bg-black text-white font-bold"
+        >
+          PERSONAL REFERENCES
+        </div>
+
+        <div class="border border-black">
+          <div
+            class="grid grid-cols-[repeat(2,1fr)_0.5fr] grid-rows-6 divide-x divide-y divide-black"
+          >
+            <!--MOTHER-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">MOTHER'S MAIDEN NAME</span>
+              <input type="text" value="<?= applicant.pref_MotherName || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_MAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_MContact || '' ?>"/>
+            </div>
+
+            <!--FATHER-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">FATHER'S NAME</span>
+              <input type="text" value="<?= applicant.pref_FatherName || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_FAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_FContact || '' ?>"/>
+            </div>
+
+            <!--NEAREST RELATIVE NOT LIVING WITH APPLICANT-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">
+                NEAREST RELATIVE NOT LIVING WITH APPLICANT
+              </span>
+              <input type="text" value="<?= applicant.pref_NRNLWA || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_NAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_NContact || '' ?>"/>
+            </div>
+
+            <!--FRIEND-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">FRIEND'S NAME</span>
+              <input type="text" value="<?= applicant.pref_FriendName || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_FRAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_FRContact || '' ?>"/>
+            </div>
+
+            <!--SPOUSE/CO-SIGNEE-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">SPOUSE'S/CO-SIGNEE'S MOTHER</span>
+              <input type="text" value="<?= applicant.pref_SpouseMother || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_SMAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_SMContact || '' ?>"/>
+            </div>
+
+            <!--SPOUSE/CO-SIGNEE-->
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">SPOUSE'S/CO-SIGNEE'S FATHER</span>
+              <input type="text" value="<?= applicant.pref_SpouseFather || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">ADDRESS</span>
+              <input type="text" value="<?= applicant.pref_SFAddress || '' ?>"/>
+            </div>
+            <div class="flex flex-col pl-2">
+              <span class="font-bold">CONTACT NUMBER</span>
+              <input type="text" value="<?= applicant.pref_SFContact || '' ?>"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fine Print Before Signature -->
+
+        <div>
+          <span class="text-[11px]">
+            I certify that all the information in this application is true &
+            correct. I authorized <strong>STARBIKE CORPORATION</strong> to
+            conduct the required credit investigation for the above purpose. It
+            is understood that this application including annexes herein remain
+            the property of <strong>Starbike Corporation</strong> whether credit
+            is granted or not.
+          </span>
+        </div>
+
+        <div class="grid grid-cols-[2fr_1fr_1fr_2fr_1fr] grid-rows-4 text-[12px] relative">
+  
+          <!-- Signature Image - Properly positioned over the signature line -->
+          <div class="col-start-1 row-start-3 relative">
+            <img
+              src="<?= applicant.signature ?>"
+              class="absolute bottom-1 left-1/2 -translate-x-1/2 max-h-12 object-contain z-10"
+              alt="Applicant Signature"
+            />
+          </div>
+
+          <!-- Labels in row 5 -->
+          <div class="row-start-4 text-center border-t border-black mx-2 pt-1">
+            Signature of Applicant/Co-Maker
+          </div>
+
+          <div class="col-start-2 row-start-3 text-center">
+            <?= applicant.signDate || '' ?>
+          </div>
+
+          <div class="row-start-4 text-center border-t border-black mx-2 pt-1">
+            Date
+          </div>
+
+          <div class="col-start-4 row-start-3 relative text-center">
+            <?= applicant.collector || '' ?>
+          </div>
+
+          <div class="row-start-4 col-start-4 text-center border-t border-black mx-2 pt-1">
+            Verify By
+          </div>
+
+          <div class="row-start-4 col-start-5 text-center border-t border-black mx-2 pt-1">
+            Date
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="paper mt-8">
+        <div class="page-break"></div>
+        <div class="grid-cols-1 grid-rows-2">
+            <div>
+                <div class="sketch-address">  
+                    <span>SKETCH OF LOCATION RESIDENCE ADDRESS</span>
+                    <p>(Note: Indicate to the nearest landmark)</p>
+                    <br>
+                </div>
+                <div class="sketch-img-container flex items-center">
+                    <img src="<?= applicant.sketch_address ?>" class="h-[350px] w-[400px]" alt="Sketch of Residence"/>
+                </div>
+            </div>
+            <div class="mt-[200px]">
+                <div class="sketch-address"> 
+                    <span>SKETCH OF LOCATION EMPLOYER OR BUSINESS ADDRESS</span>
+                    <p>(Note: Indicate to the nearest landmark)</p>
+                    <br>
+                </div>
+                <div class="sketch-img-container">
+                    <img src="<?= applicant.sketch_business ?>" class="h-[350px] w-[400px]" alt="Sketch of Employer/Business Address"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </body>
+  <script>
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+      input.readOnly = true;
+    })
+
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.style.pointerEvents = 'none';
+    });
+  </script>
+</html>

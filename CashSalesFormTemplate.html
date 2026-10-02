@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Cash</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      /* ==========================================================================
+         IMPORTS
+         ========================================================================== */
+
+      @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+      /* ==========================================================================
+         RESET
+         ========================================================================== */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+
+      /* ==========================================================================
+         GLOBAL ELEMENTS
+         ========================================================================== */
+
+      body {
+        font-family: Calibri, sans-serif;
+        font-size: 12px;
+        background-color: #f3f3f3;
+      }
+
+      input[type="text"] {
+        font-family: Calibri, sans-serif;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      /* ==========================================================================
+         BORDER UTILITIES
+         ========================================================================== */
+
+      .b {
+        border: 1px solid #000;
+      }
+
+      .bt {
+        border-top: 1px solid #000;
+      }
+
+      .br {
+        border-right: 1px solid #000;
+      }
+
+      .bb {
+        border-bottom: 1px solid #000;
+      }
+
+      .bl {
+        border-left: 1px solid #000;
+      }
+
+      .bx {
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+      }
+
+      .by {
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+      }
+
+      .btr {
+        border-top: 1px solid #000;
+        border-right: 1px solid #000;
+      }
+
+      .btl {
+        border-top: 1px solid #000;
+        border-left: 1px solid #000;
+      }
+
+      .bbr {
+        border-bottom: 1px solid #000;
+        border-right: 1px solid #000;
+      }
+
+      .bbl {
+        border-bottom: 1px solid #000;
+        border-left: 1px solid #000;
+      }
+
+
+      /* ==========================================================================
+         PAPER LAYOUT
+         ========================================================================== */
+
+      .paper {
+        width: 8.5in;
+        min-height: 13in;
+        padding: 0.25in;
+        margin: 40px auto;
+        background: white;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        break-inside: avoid;
+      }
+
+
+      /* ==========================================================================
+         PAPER LOGO
+         ========================================================================== */
+
+      .paper__img_logo {
+        display: flex;
+        justify-content: center;
+      }
+
+      .paper__img_logo img {
+        width: 250px;
+        height: 80px;
+      }
+
+
+      /* ==========================================================================
+         PAPER HEADER
+         ========================================================================== */
+
+      .paper__div_header {
+        text-align: center;
+      }
+
+      .paper__div_header_title {
+        margin-top: 8px;
+        font-family: "Roboto Slab", serif;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .paper__div_header_subtitle {
+        display: block;
+        font-size: 16px;
+        font-style: italic;
+        font-weight: 500;
+      }
+
+
+      /* ==========================================================================
+         MAIN CONTENT
+         ========================================================================== */
+
+      .paper__div_main {
+        margin-top: 16px;
+      }
+
+      .div_main__subtitle {
+        font-weight: 600;
+      }
+
+      .div_main__header {
+        display: flex;
+        gap: 16px;
+        font-weight: 500;
+      }
+
+      .div_main__header label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+
+      /* ==========================================================================
+         GRID SECTIONS
+         ========================================================================== */
+
+      .section__grid_topdetails {
+        display: grid;
+        grid-template-columns: 1fr 200px;
+        margin-top: 16px;
+      }
+
+
+      /* ==========================================================================
+         FORM COMPONENTS
+         ========================================================================== */
+
+      .text_field {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+
+
+      /* ==========================================================================
+         UI COMPONENTS
+         ========================================================================== */
+
+      .maker__banner {
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 2px 0;
+      }
+
+      .maker__banner--black {
+        background: black;
+        color: white;
+      }
+
+      .maker__banner--gray {
+        background: #d9d9d9;
+        color: black;
+      }
+
+      
+
+
+      /* ==========================================================================
+         UTILITIES
+         ========================================================================== */
+
+      .page-break {
+        break-after: page;
+      }
+
+
+      /* ==========================================================================
+         PRINT SETTINGS
+         ========================================================================== */
+
+      @media print {
+      
+        @page {
+          size: 8.5in 13in;
+          margin: 0;
+        }
+      
+        html,
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+        }
+      
+        .paper {
+          width: 8.5in !important;
+          height: 13in !important;
+          margin: 0 !important;
+          padding: 0.25in !important;
+          box-shadow: none !important;
+          overflow: hidden;
+        }
+      
+        .paper .m-4 {
+          margin: 0 !important;
+        }
+      
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      
+        .page-break {
+          break-after: page;
+          page-break-after: always;
+        }
+      }
+    </style>
+</head>
+
+<body>
+
+  <!-- =========================================================
+       PAPER CONTAINER
+  ========================================================== -->
+  <div class="paper page-break">
+
+
+    <!-- =====================================================
+         LOGO
+    ====================================================== -->
+    <div class="paper__img_logo">
+      <img src="https://drive.google.com/thumbnail?id=1FmOpWxUdvh0_zD62GUvJbpt61vb29VQ7&sz=w1000" alt="Starbike Corporation Logo">
+    </div>
+
+
+    <!-- =====================================================
+         HEADER TITLE
+    ====================================================== -->
+    <div class="paper__div_header">
+
+      <h4 class="paper__div_header_title">
+        CASH SALES -
+        <span id="dynamicSpan">REPOSSESSED</span>
+        MOTORCYCLE
+      </h4>
+
+      <span class="paper__div_header_subtitle">
+        Buyer's Information sheet
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         TYPE OF SALES (RADIO)
+    ====================================================== -->
+    <div class="paper__div_main">
+
+      <span class="div_main__subtitle">TYPE OF SALES</span>
+
+      <div class="div_main__header">
+
+        <label>
+          <input type="radio" name="sales_type" value="brand_new" <?= cash.salesType === 'Brand New Cash Sales' ? 'checked' : '' ?>>
+          BRAND-NEW CASH SALE
+        </label>
+
+        <label>
+          <input type="radio" name="sales_type" value="repo_cash" <?= cash.salesType === 'Repo Cash Sales' ? 'checked' : '' ?>>
+          REPO CASH SALE
+        </label>
+
+      </div>
+
+
+      <!-- =================================================
+           TOP DETAILS (REF + DATE)
+      ================================================== -->
+      <div class="section__grid_topdetails">
+
+        <div>
+          <label class="text_field">
+            <span class="font-bold">REFERENCE ID.:</span>
+            <input type="text" id="repo_ref" class="w-full pl-2 mr-4" value="<?= cash.refID || '' ?>">
+          </label>
+        </div>
+
+        <div>
+          <label class="text_field">
+            <span class="font-bold">DATE OF SALES:</span>
+            <input type="text" id="date_sale" class="w-full pl-2 mr-4" value="<?= cash.salesDate || '' ?>">
+          </label>
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           CUSTOMER INFORMATION HEADER
+      ================================================== -->
+      <div class="maker__banner maker__banner--black">
+        CUSTOMER INFORMATION
+      </div>
+
+
+      <!-- =================================================
+           CUSTOMER GRID
+      ================================================== -->
+      <div class="grid grid-cols-[3fr_1fr] b">
+
+
+        <!-- ================= LEFT: BUYER INFO ============ -->
+        <div class="grid grid-rows-auto br">
+
+
+          <!-- BUYER NAME -->
+          <div class="text_field bb">
+            <span class="font-bold pl-2">BUYER'S FULL NAME:</span>
+            <input type="text" id="buyersname" class="w-full pl-2 mr-1" value="<?= cash.buyerName || '' ?>">
+          </div>
+
+
+          <!-- ADDRESS -->
+          <div class="text_field bb">
+            <span class="font-bold pl-2">COMPLETE ADDRESS:</span>
+            <input type="text" id="buyersaddress" class="w-full pl-2 mr-1" value="<?= cash.address || '' ?>">
+          </div>
+
+
+          <!-- CONTACT + EMAIL -->
+          <div class="grid grid-cols-[1.5fr_2fr] bb">
+
+            <div class="text_field br">
+              <span class="font-bold pl-2">CONTACT NO.:</span>
+              <input type="text" id="buyercontact" class="w-full pl-2 mr-1" value="<?= cash.contact || '' ?>">
+            </div>
+
+            <div class="text_field">
+              <span class="font-bold pl-2">EMAIL ADDRESS:</span>
+              <input type="text" id="buyeremail" class="w-full pl-2 mr-1" value="<?= cash.email || '' ?>">
+            </div>
+
+          </div>
+
+
+          <br>
+
+
+          <!-- ================= ID SECTION HEADER ========== -->
+          <div class="maker__banner maker__banner--gray bt bb p-0">
+            ID PRESENTED
+          </div>
+
+
+          <!-- ID TYPE -->
+          <div class="text_field bb">
+            <span class="font-bold pl-2">TYPE OF ID:</span>
+            <input type="text" id="idtype" class="w-full pl-2 mr-4" value="<?= cash.idType || '' ?>">
+          </div>
+
+
+          <!-- ID NUMBER + EXPIRY -->
+          <div class="grid grid-cols-[1fr_1fr]">
+
+            <div class="text_field br">
+              <span class="font-bold pl-2">ID NO.:</span>
+              <input type="text" id="idnumber" class="w-full pl-2 mr-4" value="<?= cash.idNo || '' ?>">
+            </div>
+
+            <div class="text_field">
+              <span class="font-bold pl-2">EXPIRY DATE:</span>
+              <input type="text" id="idexpireddate" class="w-full pl-2 mr-4" value="<?= cash.idExpiry || '' ?>">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================= RIGHT: ID IMAGE ============= -->
+        <div class="flex justify-center items-center row-span-6">
+          <img src="<?= cash.id ?>" class="w-[180px] h-[120px] rounded object-cover">
+        </div>
+
+      </div>
+
+
+      <br>
+
+
+      <!-- =================================================
+           MOTORCYCLE DETAILS HEADER
+      ================================================== -->
+      <div class="maker__banner maker__banner--black">
+        MOTORCYCLE DETAILS
+      </div>
+
+
+      <!-- =================================================
+           MOTORCYCLE GRID
+      ================================================== -->
+      <div class="grid grid-cols-[2fr_1fr] b">
+
+
+        <!-- ================= LEFT: MC INFO ============== -->
+        <div class="grid grid-rows-auto br">
+
+          <div class="text_field bb">
+            <span class="font-bold pl-2">BRAND/MODEL:</span>
+            <input type="text" id="mc-brandmodel" class="w-full pl-2 mr-4" value="<?= cash.brandModel || '' ?>">
+          </div>
+
+          <div class="text_field bb">
+            <span class="font-bold pl-2">ENGINE NO.:</span>
+            <input type="text" id="mc-engine" class="w-full pl-2 mr-4" value="<?= cash.engineNo || '' ?>">
+          </div>
+
+          <div class="text_field bb">
+            <span class="font-bold pl-2">CHASSIS NO.:</span>
+            <input type="text" id="mc-chassis" class="w-full pl-2 mr-4" value="<?= cash.chassisNo || '' ?>">
+          </div>
+
+          <div class="text_field bb">
+            <span class="font-bold pl-2">COLOR:</span>
+            <input type="text" id="mc-color" class="w-full pl-2 mr-4" value="<?= cash.color || '' ?>">
+          </div>
+
+          <div class="text_field">
+            <span class="font-bold pl-2">PLATE NO.:</span>
+            <input type="text" id="mc-plate" class="w-full pl-2 mr-4" value="<?= cash.plateNo || '' ?>">
+          </div>
+
+        </div>
+
+
+        <!-- ================= RIGHT: MC IMAGE ============ -->
+        <div class="flex justify-center items-center row-span-5">
+          <img src="<?= cash.stencil ?>" class="w-[230px] h-[80px] rounded object-cover">
+        </div>
+
+      </div>
+
+
+      <br>
+
+
+      <!-- =================================================
+           PAYMENT DETAILS
+      ================================================== -->
+      <div class="maker__banner maker__banner--black">
+        PAYMENT DETAILS
+      </div>
+
+
+      <div class="grid grid-cols-[1fr_1fr] b">
+
+        <div class="text_field br">
+          <span class="font-bold pl-2">SELLING PRICE (CASH):</span>
+          <input type="text" id="pd-sellprice" class="w-full pl-2 mr-4" value="<?= cash.sellingPrice || '' ?>">
+        </div>
+
+        <div class="text_field">
+          <span class="font-bold pl-2">MODE OF PAYMENT:</span>
+          <input type="text" id="pd-paymentmethod" class="w-full pl-2 mr-4" value="<?= cash.paymentType || '' ?>">
+        </div>
+
+      </div>
+
+
+      <br>
+
+
+      <!-- =================================================
+           DOCUMENT IMAGES
+      ================================================== -->
+      <div class="grid grid-cols-2 b">
+
+        <div class="br">
+
+          <div class="text-center bg-[#d1d1d1] font-bold py-1 bb">
+            COLLECTION RECEIPT
+          </div>
+
+          <div class="flex justify-center items-center p-2">
+            <img src="<?= cash.crImg || '' ?>" class="w-[360px] h-[300px] object-contain">
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <div class="text-center bg-[#d1d1d1] font-bold py-1 bb">
+            REPO CHARGE INVOICE
+          </div>
+
+          <div class="flex justify-center items-center p-2">
+            <img src="<?= cash.rciImg || '' ?>" class="w-[360px] h-[300px] object-contain">
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           DECLARATION HEADER
+      ================================================== -->
+      <div class="text-center mt-4">
+
+        <span class="font-[RobotoSlab] text-[14px] font-bold">
+          BUYER'S DECLARATION
+          (<span id="declareSpan"></span> UNIT)
+        </span>
+
+      </div>
+
+
+      <!-- =================================================
+           DYNAMIC DECLARATION CONTENT
+      ================================================== -->
+      <div id="dynamicContent" class="mt-2 text-[12px]"></div>
+
+    </div>
+  </div>
+
+
+
+  <!-- =========================================================
+       PAGE 2 - PROOF OF PURCHASE
+  ========================================================== -->
+  <div class="paper page-break">
+
+
+    <!-- =====================================================
+         HEADER SECTION
+    ====================================================== -->
+    <div class="text-center pt-8">
+
+      <h2 class="font-[RobotoSlab] text-[18px] font-bold">
+        PROOF OF PURCHASE
+      </h2>
+
+      <span class="text-[12px]">
+        NOTE: Image of the buyer together with the branch representative and the motorcycle.
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         IMAGE CONTAINER
+    ====================================================== -->
+    <div class="flex items-center justify-center mt-16">
+
+      <img
+        src="<?= cash.popImg || '' ?>"
+        alt="Proof of Purchase Image"
+        class="w-[450px] h-[612px] rounded-lg object-contain"
+      >
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================
+       SCRIPT - DYNAMIC LOGIC
+  ========================================================== -->
+  <script>
+
+    function updateSalesType(value) {
+
+      if(!value) return;
+
+      let content = '';
+      let title = 'UNKNOWN';
+
+      const signatureBlock = `
+        <div class="grid grid-cols-3 grid-rows-4 mt-4">
+          <div class="col-start-3 flex items-center justify-center h-[30px]">
+            <img src="<?= cash.signature || '' ?>" alt="Buyer's Signature" class="w-[350px]">
+          </div>
+          <div class="row-start-2 col-start-3 text-center border-t border-black mx-4">
+            <span class="font-bold">BUYER'S SIGNATURE</span>
+          </div>
+        
+          <div class="row-start-4 text-center border-t border-black mx-4">
+            <span class="font-bold">PREPARED BY</span>
+          </div>
+        
+          <div class="row-start-4 col-start-3 text-center border-t border-black mx-4">
+            <span class="font-bold">VERIFIED BY (BM/AM)</span>
+          </div>
+        </div>
+      `;
+
+      if (value === 'brand_new') {
+        title = 'BRAND-NEW'
+
+        content = `
+          <p >
+            I confirm that I purchased the above-mentioned brand-new motorcycle in cash and received it new, unused, and in accordance with the manufacturer's and dealer's specifications.
+            I acknowledge that the unit is covered by the applicable manufacturer's warranty and confirm that I inspected it upon release and found it in good condition.
+          </p>
+
+          <p>
+            I certify that full payment has been made in cash, and ownership of the unit and its corresponding documents shall be transferred to me in accordance with applicable laws and regulations.
+          </p>
+        `;
+      } else if (value === 'repo_cash') {
+        title = 'REPOSSESSED'
+
+        content = `
+          <p class="text-center">
+            I hereby confirm that I purchased the above-mentioned repossessed motorcycle on a <strong>CASH BASIS</strong>.
+            <br> <br>
+            I fully understand and accept that the unit is sold on an <strong>“AS-IS, WHERE-IS” </strong> basis, without any warranties, whether express or implied. 
+            I further confirm that I inspected the unit prior to purchase and accepted its condition at the time of sale.
+          </p>
+        `;
+      }
+
+      // SHARED UI UPDATE
+
+      dynamicSpan.textContent = title;
+      declareSpan.textContent = title;
+
+      dynamicContent.innerHTML = `
+        ${content}
+        ${signatureBlock}
+      `;
+    }
+
+    const radiosSelect = document.querySelectorAll('input[name="sales_type"]');
+    const dynamicContent = document.getElementById('dynamicContent');
+    const dynamicSpan = document.getElementById('dynamicSpan');
+    const declareSpan = document.getElementById('declareSpan');
+
+    radiosSelect.forEach(radio => {
+      radio.addEventListener('change', () => {
+        updateSalesType(radio.value);
+      });
+    });
+
+    const checkedRadio = document.querySelector('input[name="sales_type"]:checked');
+
+    if (checkedRadio) {
+      updateSalesType(checkedRadio.value);
+    }
+    
+  </script>
+
+</body>
+</html>

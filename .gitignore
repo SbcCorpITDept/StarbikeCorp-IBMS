@@ -1,0 +1,24 @@
+# Dependencies and local caches
+node_modules/
+.cache/
+
+# Apps Script authentication (not the project mapping)
+.clasprc.json
+.clasprc.*.json
+
+# Local environment secrets
+.env
+.env.*
+!.env.example
+
+# Logs, editor files, and manual archives
+*.log
+*.zip
+*.7z
+*.rar
+*.bak
+*.tmp
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
