@@ -110,6 +110,16 @@ function _headerMap(sheet) {
   return map;
 }
 
+// 1-based column of `header` in row 1. Appends the header after the last column
+// when it is missing. Never writes below row 1.
+function _ensureHeaderColumn(sheet, header) {
+  const map = _headerMap(sheet);
+  if (map[header] !== undefined) return map[header] + 1;
+  const col = sheet.getLastColumn() + 1;
+  sheet.getRange(1, col).setValue(header);
+  return col;
+}
+
 // True if a TransactionNo already exists in TRANSACTION_HEADER (uniqueness guard).
 function _transactionNoExists(ss, transactionNo) {
   const sheet = ss.getSheetByName('TRANSACTION_HEADER');
@@ -122,6 +132,17 @@ function _transactionNoExists(ss, transactionNo) {
   return values.some(r => (r[0] || '').toString().trim().toLowerCase() === target);
 }
 
+
+// True if a TransactionID already exists in TRANSACTION_HEADER.
+function _transactionIdExists(ss, transactionId) {
+  const sheet = ss.getSheetByName('TRANSACTION_HEADER');
+  if (!sheet || sheet.getLastRow() < 2) return false;
+  const col = _headerMap(sheet)['TransactionID'];
+  if (col === undefined) return false;
+  const target = (transactionId || '').toString().trim();
+  return sheet.getRange(2, col + 1, sheet.getLastRow() - 1, 1).getValues()
+    .some(r => (r[0] || '').toString().trim() === target);
+}
 
 // Read a whole sheet as an array of {Header: value} objects (display values).
 function _readObjects(sheetName) {

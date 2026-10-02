@@ -66,8 +66,11 @@ function _readMCMaster(branch) {
     const currentBranch = row[mh['CurrentBranch']] || '';
     if (!_matchesBranch(currentBranch, branch)) continue;
 
+    const unitTypeRaw = mh['UnitType'] === undefined ? '' : (row[mh['UnitType']] || '');
     const rec = {
       mcid: mcid,
+      unitType: _normalizeUnitType(unitTypeRaw),
+      unitTypeRaw: unitTypeRaw,
       engineNo: row[mh['EngineNo']] || '',
       chassisNo: row[mh['ChassisNo']] || '',
       model: row[mh['Model']] || '',

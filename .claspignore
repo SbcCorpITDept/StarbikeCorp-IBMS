@@ -1,0 +1,6 @@
+# clasp pushes only the Apps Script sources at the project root.
+# tests/, docs/ and any other folder stay local.
+**/**
+!appsscript.json
+!*.js
+!*.html

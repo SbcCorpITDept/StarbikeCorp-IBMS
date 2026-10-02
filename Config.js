@@ -14,11 +14,20 @@ const userSheetId    = '1aYsoTnIDPqSrcDaUwCSgYVnFsPM6sbRezW7GG2191j8';
 
 const MC_INVENTORY_SPREADSHEET_ID = '18yDG_RlaTWhx_ZkWiCxy8en5dryfrDC9crn1tU4_tW8';
 
+// Unit Release (Sales) — one row per sale, in the MC inventory spreadsheet.
+const sheetNameSales = 'SALES';
+
+// Sale → CIR link columns. setupSalesSchema() adds these headers to CIR_Database.
+// While SALE_CIR_WRITEBACK is false, no values are ever written under them.
+const SALE_CIR_WRITEBACK = false;
+const CIR_SALE_LINK_HEADERS = ['SaleTransactionID', 'SaleSINo', 'SaleMCID'];
+
 // Canonical schema — sheet name → header row (order matters).
 const MC_SCHEMA = {
   MC_MASTER: [
     'MCID', 'EngineNo', 'ChassisNo', 'Model', 'ModelCode', 'Color',
-    'CurrentBranch', 'CurrentStatus', 'OriginalRR', 'DateReceived', 'LastUpdated'
+    'CurrentBranch', 'CurrentStatus', 'OriginalRR', 'DateReceived', 'LastUpdated',
+    'UnitType'
   ],
   TRANSACTION_HEADER: [
     'TransactionID', 'TransactionNo', 'TransactionType', 'SourceLocation',
@@ -38,6 +47,10 @@ const MC_SCHEMA = {
   ],
   SUPPLIERS: [
     'SupplierName', 'Active'
+  ],
+  SALES: [
+    'TransactionID', 'AccountNo', 'CID', 'AID', 'CustomerName', 'ContactNo',
+    'Address', 'UnitType', 'ATRNo', 'SINo', 'RCINo'
   ]
 };
 

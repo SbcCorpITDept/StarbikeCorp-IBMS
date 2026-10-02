@@ -94,3 +94,63 @@ function setupDatabase() {
 // google.script.run. All reads are display-value based; all writes go
 // through createTransaction() so history stays consistent.
 // =====================================================================
+
+
+// =====================================================================
+// ===============  UNIT RELEASE (SALES) — SCHEMA SETUP  ================
+// =====================================================================
+// Run setupSalesSchema() ONCE from the Apps Script editor. Safe to re-run:
+//   • Creates the SALES sheet with MC_SCHEMA.SALES headers if missing.
+//   • Adds MC_MASTER.UnitType and sets BLANK cells (rows with an MCID) to Brand-New.
+//     Change repossessed units to Repo by hand afterward.
+//   • Adds the CIR_Database sale-link headers — headers only, no values.
+// Afterward, regenerate the CIR_Database table structure in AppSheet once.
+// =====================================================================
+function setupSalesSchema() {
+  const log = [];
+  const mc = _mcSS();
+
+  // 1) SALES sheet (also initializes an existing empty sheet).
+  const existing = mc.getSheetByName(sheetNameSales);
+  const initialized = !existing || existing.getLastRow() === 0;
+  _ensureSalesSheet(mc);
+  log.push((initialized ? 'CREATED  ' : 'OK       ') + sheetNameSales + '  (' + MC_SCHEMA.SALES.length + ' cols)');
+
+  // 2) MC_MASTER.UnitType header + blank backfill
+  const master = mc.getSheetByName('MC_MASTER');
+  if (!master) {
+    log.push('SKIP     MC_MASTER not found — run setupDatabase() first');
+  } else {
+    const typeCol = _ensureHeaderColumn(master, 'UnitType');
+    const mcidCol = _headerMap(master)['MCID'];
+    let filled = 0;
+    if (mcidCol !== undefined && master.getLastRow() > 1) {
+      const n = master.getLastRow() - 1;
+      const ids = master.getRange(2, mcidCol + 1, n, 1).getValues();
+      const typeRange = master.getRange(2, typeCol, n, 1);
+      const types = typeRange.getValues();
+      types.forEach(function (r, i) {
+        const hasId = (ids[i][0] == null ? '' : ids[i][0]).toString().trim() !== '';
+        const blank = (r[0] == null ? '' : r[0]).toString().trim() === '';
+        if (hasId && blank) { master.getRange(i + 2, typeCol).setValue('Brand-New'); filled++; }
+      });
+    }
+    log.push('OK       MC_MASTER.UnitType  (' + filled + ' blank cell(s) set to Brand-New)');
+  }
+
+  // 3) CIR_Database link headers (no values)
+  const cir = SpreadsheetApp.openById(spreadsheetId).getSheetByName(sheetNameCIR);
+  if (!cir) {
+    log.push('SKIP     ' + sheetNameCIR + ' not found');
+  } else {
+    const before = _headerMap(cir);
+    CIR_SALE_LINK_HEADERS.forEach(function (h) {
+      _ensureHeaderColumn(cir, h);
+      log.push((before[h] === undefined ? 'ADDED    ' : 'OK       ') + sheetNameCIR + '.' + h);
+    });
+  }
+
+  const report = log.join('\n');
+  Logger.log('setupSalesSchema() complete:\n' + report);
+  return report;
+}

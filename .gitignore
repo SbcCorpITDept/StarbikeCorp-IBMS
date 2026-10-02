@@ -22,3 +22,6 @@ node_modules/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Generated UI preview (tests/ui/build-preview.js)
+tests/ui/preview.html

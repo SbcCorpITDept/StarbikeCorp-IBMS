@@ -2408,32 +2408,35 @@
     </div>
 
     <!-- SALE REVIEW / CONFIRM MODAL (with countdown) -->
-    <div id="saleConfirmModal" class="fixed inset-0 z-50 hidden">
+    <div id="saleConfirmModal" role="dialog" aria-modal="true" aria-labelledby="scTitle" class="fixed inset-0 z-50 hidden">
       <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeSaleReview()"></div>
       <div class="relative flex min-h-screen items-center justify-center p-4">
-        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-200">
-            <h3 class="text-lg font-bold text-slate-900">Review Sale</h3>
-            <p class="text-xs text-slate-500">Verify the customer and motorcycles before confirming — this marks the units Sold.</p>
+            <h3 id="scTitle" class="text-lg font-bold text-slate-900">Review Unit Release</h3>
+            <p class="text-xs text-slate-500">Verify the customer, documents and motorcycle before confirming — this marks the unit Sold.</p>
           </div>
           <div class="p-6">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
-              <div><div class="text-slate-400 text-xs">Sale No</div><div id="scNo" class="font-mono font-semibold text-slate-800">-</div></div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mb-4">
+              <div><div class="text-slate-400 text-xs">Sale No.</div><div id="scNo" class="font-mono font-semibold text-slate-800">-</div></div>
+              <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Transaction ID</div><div id="scTxnId" class="font-mono text-xs text-slate-600 break-all">-</div></div>
               <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Customer</div><div id="scCustomer" class="text-slate-800">-</div></div>
-              <div><div class="text-slate-400 text-xs">Units</div><div id="scCount" class="text-slate-800 font-semibold">-</div></div>
+              <div><div class="text-slate-400 text-xs">Account No.</div><div id="scAccount" class="font-mono text-slate-800">-</div></div>
               <div><div class="text-slate-400 text-xs">Branch</div><div id="scBranch" class="text-slate-800">-</div></div>
+              <div class="sm:col-span-2"><div class="text-slate-400 text-xs">Documents</div><div id="scDocs" class="font-mono text-slate-800">-</div></div>
             </div>
             <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 mb-4 flex items-center gap-2">
               <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
-              Confirm the engine numbers below. Once sold, these units leave your inventory.
+              Confirm the engine number below. Once released, this unit is marked Sold.
             </div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-64 overflow-y-auto">
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
               <table class="min-w-full text-sm">
-                <thead class="bg-slate-50 sticky top-0">
+                <thead class="bg-slate-50">
                   <tr>
                     <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
                   </tr>
                 </thead>
                 <tbody id="scUnitsBody"></tbody>
@@ -2447,6 +2450,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- CANCEL PENDING TRANSFER MODAL (with countdown) -->
     <div id="cancelTransferModal" class="fixed inset-0 z-50 hidden">
@@ -2540,7 +2544,7 @@
       </div>
     </div>
 
-    <!-- SALES — LIST -->
+    <!-- SALES — LIST (Unit Releases: 1 sale = 1 customer = 1 motorcycle) -->
     <div id="salesPage" class="hidden overflow-y-auto w-full flex-1">
       <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div class="mb-6 flex items-center justify-between">
@@ -2549,14 +2553,14 @@
             <p class="text-sm text-slate-500">Motorcycles released to customers</p>
           </div>
           <button onclick="openCreateSale()" class="inline-flex items-center gap-2 rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition">
-            <i data-lucide="plus" class="w-4 h-4"></i> New Sale
+            <i data-lucide="plus" class="w-4 h-4"></i> New Unit Release
           </button>
         </div>
 
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm mb-4">
           <div class="relative max-w-md">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input id="salesSearch" type="text" placeholder="Search sale no or customer…" class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm" oninput="applySalesSearch()" />
+            <input id="salesSearch" type="text" placeholder="Search sale no, SI, customer, account or engine…" class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm" oninput="applySalesSearch()" />
           </div>
         </div>
 
@@ -2565,11 +2569,13 @@
             <table class="min-w-full divide-y divide-slate-200">
               <thead class="bg-slate-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Sale No</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Sale No.</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Date</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Customer</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Account No.</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No.</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Branch</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Units</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
@@ -2587,91 +2593,144 @@
       </main>
     </div>
 
-    <!-- CREATE SALE -->
+
+    <!-- CREATE UNIT RELEASE — step 1: select motorcycle, step 2: release form -->
     <div id="createSalePage" class="hidden overflow-y-auto w-full flex-1">
       <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <button onclick="showPage('salesPage', null)" class="mb-4 text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
           <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sales
         </button>
         <div class="mb-6">
-          <h1 class="text-2xl font-bold text-slate-800">Create Sale</h1>
-          <p class="text-sm text-slate-500">Release available units to a customer</p>
+          <h1 class="text-2xl font-bold text-slate-800">New Unit Release</h1>
+          <p id="urStepLabel" class="text-sm text-slate-500">Step 1 of 2 — Select an available motorcycle</p>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-4">Customer &amp; Sale Information</div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Sale / Reference No <span class="text-red-500">*</span></label>
-              <input id="csNo" type="text" placeholder="e.g. SALE-2025-001" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        <!-- STEP 1 — SELECT MOTORCYCLE -->
+        <div id="urStep1">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <h4 class="text-sm font-bold text-slate-900">Available Motorcycles</h4>
+              <div class="relative w-full sm:w-72">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="urEngineSearch" type="text" placeholder="Search engine number…" class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm" oninput="renderUrUnits()" />
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Sale Date</label>
-              <input id="csDate" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-3 w-10"></th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Color</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Unit Type</th>
+                    <th id="urBranchHead" class="hidden px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Branch</th>
+                  </tr>
+                </thead>
+                <tbody id="urUnitsBody" class="bg-white divide-y divide-slate-100"></tbody>
+              </table>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Branch</label>
-              <input id="csBranch" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Last Name <span class="text-red-500">*</span></label>
-              <input id="csLast" type="text" placeholder="Last name" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">First Name <span class="text-red-500">*</span></label>
-              <input id="csFirst" type="text" placeholder="First name" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Middle Name</label>
-              <input id="csMiddle" type="text" placeholder="Optional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Suffix</label>
-              <input id="csSuffix" type="text" placeholder="e.g. JR, SR, III" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Contact Number</label>
-              <input id="csContact" type="text" placeholder="Optional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Address</label>
-              <input id="csAddress" type="text" placeholder="Optional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div class="md:col-span-3">
-              <label class="block text-xs font-medium text-slate-500 mb-1">Remarks</label>
-              <input id="csRemarks" type="text" placeholder="Optional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            </div>
+            <div id="urUnitsStatus" class="text-sm text-slate-500 px-5 py-3 bg-slate-50 border-t border-slate-100">Loading available units…</div>
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="urContinueBtn" onclick="urContinue()" disabled class="px-5 py-2 text-sm rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 opacity-60 cursor-not-allowed">Continue</button>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h4 class="text-sm font-bold text-slate-900">Available Units</h4>
-            <span id="csSelCount" class="text-xs text-slate-500">0 selected</span>
+        <!-- STEP 2 — UNIT RELEASE FORM -->
+        <div id="urStep2" class="hidden space-y-4">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-4">Sale Info</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label for="urTxnId" class="block text-xs font-medium text-slate-500 mb-1">Transaction ID</label>
+                <input id="urTxnId" type="text" readonly data-no-uppercase class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 text-slate-600" />
+              </div>
+              <div>
+                <label for="urDate" class="block text-xs font-medium text-slate-500 mb-1">Date of Sale <span class="text-red-500">*</span></label>
+                <input id="urDate" type="date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="urBranch" class="block text-xs font-medium text-slate-500 mb-1">Branch</label>
+                <input id="urBranch" type="text" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50" />
+              </div>
+            </div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200">
-              <thead class="bg-slate-50">
-                <tr>
-                  <th class="px-4 py-3 w-10"><input id="csSelectAll" type="checkbox" onchange="toggleAllSaleUnits(this)" /></th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Engine No</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Chassis No</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
-                </tr>
-              </thead>
-              <tbody id="csUnitsBody" class="bg-white divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
-          <div id="csUnitsStatus" class="text-sm text-slate-500 px-5 py-3 bg-slate-50 border-t border-slate-100">Loading available units…</div>
-        </div>
 
-        <div id="csError" class="hidden mt-4 text-sm text-red-600"></div>
-        <div class="mt-4 flex justify-end gap-2">
-          <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
-          <button id="csSubmitBtn" onclick="submitSale()" class="px-5 py-2 text-sm rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700">Create Sale</button>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-4">Customer</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label for="urAccountNo" class="block text-xs font-medium text-slate-500 mb-1">Account No. <span class="text-red-500">*</span></label>
+                <input id="urAccountNo" type="text" placeholder="Customer account number" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div class="md:col-span-2 relative">
+                <label for="urCustomerSearch" class="block text-xs font-medium text-slate-500 mb-1">Customer / Account Name <span class="text-red-500">*</span></label>
+                <input id="urCustomerSearch" type="text" role="combobox" aria-autocomplete="list" aria-controls="urCustomerList" aria-expanded="false" autocomplete="off" placeholder="Search approved Maker by name or CID…" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                  oninput="urCustomerTyped()" onfocus="renderUrCustomers()" onkeydown="urCustomerKeydown(event)" onblur="closeUrCustomers()" />
+                <div id="urCustomerList" role="listbox" aria-label="Eligible customers" class="hidden absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg"></div>
+                <p id="urCustomerStatus" class="mt-1 text-xs text-slate-400"></p>
+              </div>
+              <div>
+                <label for="urContact" class="block text-xs font-medium text-slate-500 mb-1">Contact Number</label>
+                <input id="urContact" type="text" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50" />
+              </div>
+              <div class="md:col-span-2">
+                <label for="urAddress" class="block text-xs font-medium text-slate-500 mb-1">Address</label>
+                <input id="urAddress" type="text" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50" />
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Documents</div>
+              <div id="urTypeBadge"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div id="urAtrWrap">
+                <label for="urAtrNo" class="block text-xs font-medium text-slate-500 mb-1">ATR No. <span class="text-red-500">*</span></label>
+                <input id="urAtrNo" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div id="urRciWrap" class="hidden">
+                <label for="urRciNo" class="block text-xs font-medium text-slate-500 mb-1">RCI No. <span class="text-red-500">*</span></label>
+                <input id="urRciNo" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="urSiNo" class="block text-xs font-medium text-slate-500 mb-1">SI No. <span class="text-red-500">*</span></label>
+                <input id="urSiNo" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">Motorcycle Details</div>
+              <button type="button" onclick="urBackToStep1()" class="text-xs font-semibold text-orange-600 hover:text-orange-700">Change unit</button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div><div class="text-slate-400 text-xs">MCID</div><div id="urMcid" class="font-mono text-xs text-slate-800 break-all">-</div></div>
+              <div><div class="text-slate-400 text-xs">Engine No</div><div id="urEngine" class="font-mono text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Chassis No</div><div id="urChassis" class="font-mono text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Model</div><div id="urModel" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Model Code</div><div id="urModelCode" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Color</div><div id="urColor" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Current Branch</div><div id="urCurBranch" class="text-slate-800">-</div></div>
+              <div><div class="text-slate-400 text-xs">Current Status</div><div id="urCurStatus" class="text-slate-800">-</div></div>
+            </div>
+          </div>
+
+          <div id="urError" class="hidden text-sm text-red-600"></div>
+          <div class="flex justify-end gap-2">
+            <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button id="urSubmitBtn" onclick="submitSale()" class="px-5 py-2 text-sm rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700">Review &amp; Release</button>
+          </div>
         </div>
       </main>
     </div>
+
 
     <!-- MOVEMENT HISTORY -->
     <div id="movementHistoryPage" class="hidden overflow-y-auto w-full flex-1">
@@ -5654,25 +5713,26 @@
   <script>
   (function () {
     let salesData = [];
-    let csUnits = [];
 
     window.loadSales = function () {
       const branch = window._userBranch || 'ALL';
       const status = document.getElementById('salesStatus');
       if (status) status.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Loading sales…';
-      window.mcSkelRows('salesBody', 6);
+      window.mcSkelRows('salesBody', 8);
       if (window.lucide) lucide.createIcons();
       google.script.run
-        .withSuccessHandler(function (rows) { salesData = rows || []; renderSales(salesData); })
+        .withSuccessHandler(function (rows) { salesData = rows || []; applySalesSearch(); })
         .withFailureHandler(function (err) { if (status) status.innerHTML = '<span class="text-red-600">Failed: ' + err + '</span>'; })
         .getSales(branch);
     };
 
     window.applySalesSearch = function () {
       const q = (document.getElementById('salesSearch').value || '').trim().toLowerCase();
+      const fields = ['transactionNo', 'siNo', 'customer', 'accountNo', 'engineNo'];
       renderSales(!q ? salesData : salesData.filter(s =>
-        (s.transactionNo || '').toLowerCase().includes(q) || (s.customer || '').toLowerCase().includes(q)));
+        fields.some(f => (s[f] || '').toString().toLowerCase().includes(q))));
     };
+
 
     const saleState = { currentPage: 1, filteredRows: [] };
     function renderSales(rows) {
@@ -5686,137 +5746,300 @@
       const total = saleState.filteredRows.length;
       const rows = window.paginateRows(saleState.filteredRows, saleState.currentPage);
       if (!total) {
-        body.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-slate-400">No sales yet.</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" class="text-center py-12 text-slate-400">No unit releases yet.</td></tr>';
       } else {
         body.innerHTML = rows.map(s => `
           <tr class="hover:bg-slate-50">
             <td class="px-6 py-4 font-mono font-semibold text-slate-800">${window.mcEscape(s.transactionNo)}</td>
             <td class="px-6 py-4 text-slate-600">${window.mcEscape(s.date)}</td>
             <td class="px-6 py-4 text-slate-700">${window.mcEscape(s.customer)}</td>
+            <td class="px-6 py-4 font-mono text-slate-700">${window.mcEscape(s.accountNo) || '-'}</td>
+            <td class="px-6 py-4 font-mono text-slate-700">${window.mcEscape(s.engineNo) || '-'}</td>
+            <td class="px-6 py-4 text-slate-700">${window.mcEscape(s.unitType) || '-'}</td>
             <td class="px-6 py-4 text-slate-700">${window.mcEscape(s.branch)}</td>
-            <td class="px-6 py-4 text-slate-700">${s.units}</td>
             <td class="px-6 py-4"><span class="px-2.5 py-1 text-xs rounded-full bg-orange-50 text-orange-700">${window.mcEscape(s.status) || 'Completed'}</span></td>
           </tr>`).join('');
       }
-      if (status) status.innerHTML = '<i data-lucide="list" class="w-4 h-4 mr-2"></i> Showing <strong class="mx-1">' + total + '</strong> sale' + (total === 1 ? '' : 's');
+      if (status) status.innerHTML = '<i data-lucide="list" class="w-4 h-4 mr-2"></i> Showing <strong class="mx-1">' + total + '</strong> release' + (total === 1 ? '' : 's');
       window.renderPagination(saleState, 'salePaginationControls', 'salePaginationInfo', 'salePaginationBar', drawSalesPage);
       if (window.lucide) lucide.createIcons();
     }
 
-    // ── Create Sale ──
+    // ── Create Unit Release (1 sale = 1 customer = 1 motorcycle) ──
+    // Step 1 picks one Available unit; step 2 fills the release form. The
+    // Transaction ID is issued by the server once per form and kept through
+    // "Change unit". Branch always follows the selected unit's CurrentBranch.
+    const ur = { transactionId: '', units: [], selectedMcid: '', unit: null, branch: '', customers: [], customer: null, scope: '', customersLoaded: false };
+    let urFormVersion = 0;
+    let urCustomerRequest = 0;
+    let urSaving = false;
+    let urCustomerIndex = -1;
+    function urEl(id) { return document.getElementById(id); }
+    function urScopeAll() { return ur.scope.toUpperCase() === 'ALL'; }
+    function urToday() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
     window.openCreateSale = function () {
-      const branch = (window._userBranch && window._userBranch !== 'ALL') ? window._userBranch : '';
-      document.getElementById('csNo').value = '';
-      document.getElementById('csDate').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('csBranch').value = branch;
-      ['csLast', 'csFirst', 'csMiddle', 'csSuffix', 'csContact', 'csAddress', 'csRemarks'].forEach(id => { document.getElementById(id).value = ''; });
-      document.getElementById('csError').classList.add('hidden');
-      document.getElementById('csSelCount').textContent = '0 selected';
-      const sa = document.getElementById('csSelectAll'); if (sa) sa.checked = false;
+      if (urSaving) return;
+      closeSaleReview();
+      const formVersion = ++urFormVersion;
+      Object.assign(ur, { transactionId: '', units: [], selectedMcid: '', unit: null, branch: '', customers: [], customer: null,
+        scope: (window._userBranch || '').trim(), customersLoaded: false });
+      urEl('urCustomerList').classList.add('hidden');
+      ['urEngineSearch', 'urAccountNo', 'urCustomerSearch', 'urContact', 'urAddress', 'urAtrNo', 'urRciNo', 'urSiNo', 'urBranch']
+        .forEach(id => { urEl(id).value = ''; });
+      urEl('urDate').value = urToday();
+      urEl('urTxnId').value = 'Generating…';
+      urEl('urCustomerStatus').textContent = '';
+      urEl('urError').classList.add('hidden');
+      urEl('urBranchHead').classList.toggle('hidden', !urScopeAll());
+      urShowStep(1);
       showPage('createSalePage', null);
 
-      const st = document.getElementById('csUnitsStatus');
-      st.textContent = 'Loading available units…';
-      document.getElementById('csUnitsBody').innerHTML = '';
-      google.script.run.withSuccessHandler(function (units) {
-        csUnits = units || [];
-        renderCsUnits(csUnits);
-      }).withFailureHandler(function (e) { st.textContent = 'Failed: ' + e; }).getAvailableUnits(branch || 'ALL');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (formVersion !== urFormVersion) return;
+          ur.transactionId = (res && res.transactionId) || '';
+          urEl('urTxnId').value = ur.transactionId || '—';
+        })
+        .withFailureHandler(function (e) {
+          if (formVersion !== urFormVersion) return;
+          urEl('urTxnId').value = '—';
+          window.mcAlert('' + e, { title: 'Could not start Unit Release' });
+        })
+        .beginUnitRelease();
+
+      urEl('urUnitsStatus').textContent = 'Loading available units…';
+      urEl('urUnitsBody').innerHTML = '';
+      urUpdateContinue();
+      google.script.run
+        .withSuccessHandler(function (units) { if (formVersion !== urFormVersion) return; ur.units = units || []; renderUrUnits(); })
+        .withFailureHandler(function (e) { if (formVersion === urFormVersion) urEl('urUnitsStatus').textContent = 'Failed: ' + e; })
+        .getAvailableUnits(ur.scope);
     };
 
-    function renderCsUnits(units) {
-      const body = document.getElementById('csUnitsBody');
-      const st = document.getElementById('csUnitsStatus');
-      if (!units.length) {
-        body.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">No available units to sell.</td></tr>';
+    function urShowStep(n) {
+      urEl('urStep1').classList.toggle('hidden', n !== 1);
+      urEl('urStep2').classList.toggle('hidden', n !== 2);
+      urEl('urStepLabel').textContent = n === 1
+        ? 'Step 1 of 2 — Select an available motorcycle'
+        : 'Step 2 of 2 — Complete the Unit Release form';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function urTypeBadge(u) {
+      if (u.unitType === 'Repo') return '<span class="px-2 py-0.5 text-xs rounded-full bg-orange-50 text-orange-700">Repo</span>';
+      if (u.unitType === 'Brand-New') return '<span class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700">Brand-New</span>';
+      return '<span class="px-2 py-0.5 text-xs rounded-full bg-red-50 text-red-700">Invalid type: ' + window.mcEscape(u.unitTypeRaw) + '</span>';
+    }
+
+    window.renderUrUnits = function () {
+      const q = (urEl('urEngineSearch').value || '').trim().toLowerCase();
+      const all = urScopeAll();
+      const rows = ur.units.filter(u => !q || (u.engineNo || '').toLowerCase().includes(q));
+      const body = urEl('urUnitsBody');
+      if (!rows.length) {
+        const msg = ur.units.length ? 'No unit matches that engine number.' : 'No available units.';
+        body.innerHTML = '<tr><td colspan="' + (all ? 7 : 6) + '" class="text-center py-8 text-slate-400">' + msg + '</td></tr>';
       } else {
-        body.innerHTML = units.map((u, i) => `
-          <tr class="hover:bg-slate-50">
-            <td class="px-4 py-3"><input type="checkbox" class="cs-unit-cb" data-idx="${i}" onchange="updateSaleSelCount()" /></td>
+        body.innerHTML = rows.map(u => {
+          const invalid = u.unitType === 'Invalid';
+          const sel = u.mcid === ur.selectedMcid;
+          return `<tr data-mcid="${window.mcEscape(u.mcid)}" class="${invalid ? 'opacity-60' : 'hover:bg-slate-50 cursor-pointer'} ${sel ? 'bg-orange-50' : ''}" ${invalid ? '' : 'onclick="selectUrUnit(this.dataset.mcid)"'}>
+            <td class="px-4 py-3"><input type="radio" name="urUnit" ${sel ? 'checked' : ''} ${invalid ? 'disabled' : ''} data-no-uppercase /></td>
             <td class="px-4 py-3 font-mono text-slate-800">${window.mcEscape(u.engineNo)}</td>
             <td class="px-4 py-3 font-mono text-slate-600">${window.mcEscape(u.chassisNo)}</td>
             <td class="px-4 py-3 text-slate-700">${window.mcEscape(u.model)}</td>
-          </tr>`).join('');
+            <td class="px-4 py-3 text-slate-700">${window.mcEscape(u.color)}</td>
+            <td class="px-4 py-3">${urTypeBadge(u)}</td>
+            ${all ? `<td class="px-4 py-3 text-slate-700">${window.mcEscape(u.currentBranch)}</td>` : ''}
+          </tr>`;
+        }).join('');
       }
-      st.textContent = units.length + ' available unit(s)';
-      updateSaleSelCount();
+      urEl('urUnitsStatus').textContent = ur.units.length + ' available unit(s)';
+      urUpdateContinue();
+    };
+
+    window.selectUrUnit = function (mcid) { ur.selectedMcid = mcid; renderUrUnits(); };
+
+    function urUpdateContinue() {
+      const u = ur.units.find(x => x.mcid === ur.selectedMcid);
+      const ok = !!u && u.unitType !== 'Invalid';
+      const btn = urEl('urContinueBtn');
+      btn.disabled = !ok;
+      btn.classList.toggle('opacity-60', !ok);
+      btn.classList.toggle('cursor-not-allowed', !ok);
     }
 
-    window.toggleAllSaleUnits = function (master) {
-      document.querySelectorAll('.cs-unit-cb').forEach(cb => { cb.checked = master.checked; });
-      updateSaleSelCount();
-    };
-    window.updateSaleSelCount = function () {
-      const n = document.querySelectorAll('.cs-unit-cb:checked').length;
-      document.getElementById('csSelCount').textContent = n + ' selected';
+    window.urContinue = function () {
+      const unit = ur.units.find(u => u.mcid === ur.selectedMcid);
+      if (!unit || unit.unitType === 'Invalid') return;
+      const branchChanged = unit.currentBranch !== ur.branch;
+      ur.unit = unit;
+      ur.branch = unit.currentBranch;
+      [['urMcid', unit.mcid], ['urEngine', unit.engineNo], ['urChassis', unit.chassisNo], ['urModel', unit.model],
+       ['urModelCode', unit.modelCode], ['urColor', unit.color], ['urCurBranch', unit.currentBranch], ['urCurStatus', unit.currentStatus]]
+        .forEach(([id, v]) => { urEl(id).textContent = v || '-'; });
+      urEl('urBranch').value = ur.branch;
+      urEl('urTypeBadge').innerHTML = urTypeBadge(unit);
+      urEl('urAtrWrap').classList.toggle('hidden', unit.unitType !== 'Brand-New');
+      urEl('urRciWrap').classList.toggle('hidden', unit.unitType !== 'Repo');
+      urEl('urError').classList.add('hidden');
+      urShowStep(2);
+      if (branchChanged || !ur.customersLoaded) urLoadCustomers();
     };
 
-    // Step 1: validate, then open the review-and-confirm modal (does NOT submit yet).
+    window.urBackToStep1 = function () { urShowStep(1); renderUrUnits(); };
+
+    // Customers always follow the selected unit's branch.
+    function urLoadCustomers() {
+      const request = ++urCustomerRequest;
+      const formVersion = urFormVersion;
+      ur.customersLoaded = false;
+      ur.customers = [];
+      ur.customer = null;
+      urEl('urCustomerSearch').value = '';
+      urEl('urContact').value = '';
+      urEl('urAddress').value = '';
+      urEl('urCustomerList').classList.add('hidden');
+      const branch = ur.branch;
+      const st = urEl('urCustomerStatus');
+      st.textContent = 'Loading customers for ' + branch + '…';
+      google.script.run
+        .withSuccessHandler(function (rows) {
+          if (branch !== ur.branch || request !== urCustomerRequest || formVersion !== urFormVersion) return;
+          ur.customersLoaded = true;
+          ur.customers = rows || [];
+          if (document.activeElement === urEl('urCustomerSearch')) renderUrCustomers();
+          st.textContent = ur.customers.length + ' eligible customer(s) at ' + branch + ' (approved Maker, no unit yet)';
+        })
+        .withFailureHandler(function (e) {
+          if (request !== urCustomerRequest || formVersion !== urFormVersion) return;
+          st.textContent = 'Failed to load customers: ' + e + '. Use Change unit, then Continue to retry.';
+        })
+        .getSaleCustomers(branch);
+    }
+
+    window.urCustomerTyped = function () {
+      urCustomerIndex = -1;
+      if (ur.customer) { ur.customer = null; urEl('urContact').value = ''; urEl('urAddress').value = ''; }
+      renderUrCustomers();
+    };
+
+    function urCustomerMatches() {
+      const q = (urEl('urCustomerSearch').value || '').trim().toLowerCase();
+      return ur.customers.filter(c => !q ||
+        (c.name || '').toLowerCase().includes(q) || (c.cid || '').toLowerCase().includes(q)).slice(0, 50);
+    }
+
+    window.closeUrCustomers = function () {
+      urEl('urCustomerList').classList.add('hidden');
+      urEl('urCustomerSearch').setAttribute('aria-expanded', 'false');
+      urEl('urCustomerSearch').removeAttribute('aria-activedescendant');
+      urCustomerIndex = -1;
+    };
+
+    window.urCustomerKeydown = function (event) {
+      if (event.key === 'Escape') { closeUrCustomers(); return; }
+      const rows = urCustomerMatches();
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!rows.length) urCustomerIndex = -1;
+        else if (urCustomerIndex < 0) urCustomerIndex = event.key === 'ArrowDown' ? 0 : rows.length - 1;
+        else urCustomerIndex = (urCustomerIndex + (event.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
+        renderUrCustomers();
+      } else if (event.key === 'Enter' && !urEl('urCustomerList').classList.contains('hidden') && rows[urCustomerIndex]) {
+        event.preventDefault();
+        selectUrCustomer(rows[urCustomerIndex].cid);
+      }
+    };
+
+    window.renderUrCustomers = function () {
+      const list = urEl('urCustomerList');
+      const rows = urCustomerMatches();
+      list.innerHTML = rows.length
+        ? rows.map((c, i) => `<button type="button" role="option" tabindex="-1" id="urCustomerOption${i}" aria-selected="${i === urCustomerIndex}" data-cid="${window.mcEscape(c.cid)}" onmousedown="event.preventDefault()" onclick="selectUrCustomer(this.dataset.cid)" class="${i === urCustomerIndex ? 'bg-orange-50' : ''} w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex justify-between gap-3">
+            <span class="text-slate-800">${window.mcEscape(c.name)}</span><span class="font-mono text-xs text-slate-400">${window.mcEscape(c.cid)}</span>
+          </button>`).join('')
+        : '<div class="px-3 py-2 text-sm text-slate-400">No matching customer.</div>';
+      list.classList.remove('hidden');
+      urEl('urCustomerSearch').setAttribute('aria-expanded', 'true');
+      if (urCustomerIndex >= 0 && rows[urCustomerIndex]) {
+        urEl('urCustomerSearch').setAttribute('aria-activedescendant', 'urCustomerOption' + urCustomerIndex);
+      } else {
+        urEl('urCustomerSearch').removeAttribute('aria-activedescendant');
+      }
+    };
+
+    window.selectUrCustomer = function (cid) {
+      const c = ur.customers.find(x => x.cid === cid);
+      if (!c) return;
+      ur.customer = c;   // CID / AID stay in form state only
+      urEl('urCustomerSearch').value = c.name + '  (' + c.cid + ')';
+      urEl('urContact').value = c.contact || '';
+      urEl('urAddress').value = c.address || '';
+      closeUrCustomers();
+    };
+
+    // Validate, then open the review-and-confirm modal (does NOT submit yet).
     let pendingSale = null;
     let scTimer = null;
     const SALE_REVIEW_SECONDS = 5;
 
     window.submitSale = function () {
-      const err = document.getElementById('csError');
+      if (urSaving) return;
+      const err = urEl('urError');
       err.classList.add('hidden');
-      const no = document.getElementById('csNo').value.trim();
-      const branch = document.getElementById('csBranch').value.trim();
-      const last = document.getElementById('csLast').value.trim();
-      const first = document.getElementById('csFirst').value.trim();
-      const middle = document.getElementById('csMiddle').value.trim();
-      const suffix = document.getElementById('csSuffix').value.trim();
-      if (!no) return show('Sale / Reference No is required.');
-      if (!branch) return show('Your account has no branch set.');
-      if (!last || !first) return show('Customer last name and first name are required.');
-      // Build "LAST, FIRST MIDDLE SUFFIX"
-      const customer = (last + ', ' + first + (middle ? ' ' + middle : '') + (suffix ? ' ' + suffix : '')).trim();
-
-      const selected = Array.from(document.querySelectorAll('.cs-unit-cb:checked'))
-        .map(cb => csUnits[parseInt(cb.dataset.idx, 10)])
-        .filter(Boolean)
-        .map(u => ({ MCID: u.mcid, EngineNo: u.engineNo, ChassisNo: u.chassisNo, Model: u.model, ModelCode: u.modelCode }));
-      if (!selected.length) return show('Select at least one unit to sell.');
-
-      // Fold contact/address into remarks (no dedicated columns in the schema).
-      const contact = document.getElementById('csContact').value.trim();
-      const address = document.getElementById('csAddress').value.trim();
-      const rmk = document.getElementById('csRemarks').value.trim();
-      const remarks = [rmk, contact ? ('Contact: ' + contact) : '', address ? ('Address: ' + address) : ''].filter(Boolean).join(' | ');
+      const show = m => { err.textContent = m; err.classList.remove('hidden'); return false; };
+      const u = ur.unit;
+      if (!ur.transactionId) return show('Transaction ID is not ready yet. Wait a moment, or start a new Unit Release.');
+      if (!u) return show('Select a motorcycle first.');
+      if (!urEl('urDate').value) return show('Date of Sale is required.');
+      const accountNo = urEl('urAccountNo').value.trim();
+      if (!accountNo) return show('Account No. is required.');
+      if (!ur.customer) return show('Select a customer from the list.');
+      const docs = { ATRNo: urEl('urAtrNo').value.trim(), SINo: urEl('urSiNo').value.trim(), RCINo: urEl('urRciNo').value.trim() };
+      if (u.unitType === 'Brand-New' && !docs.ATRNo) return show('ATR No. is required.');
+      if (u.unitType === 'Repo' && !docs.RCINo) return show('RCI No. is required.');
+      if (!docs.SINo) return show('SI No. is required.');
+      if (u.unitType === 'Brand-New') docs.RCINo = ''; else docs.ATRNo = '';
 
       pendingSale = {
-        no: no, customer: customer, branch: branch, selected: selected,
+        saleNo: 'SALE-' + docs.SINo, unit: u, customer: ur.customer, accountNo: accountNo, docs: docs,
         payload: {
-          TransactionNo: no, CustomerName: customer, Source: branch,
-          Date: document.getElementById('csDate').value, Remarks: remarks,
-          CreatedBy: (window._userEmail || ''), Units: selected
+          TransactionID: ur.transactionId, MCID: u.mcid, CID: ur.customer.cid, Scope: ur.scope,
+          SaleDate: urEl('urDate').value, AccountNo: accountNo,
+          ATRNo: docs.ATRNo, SINo: docs.SINo, RCINo: docs.RCINo, CreatedBy: (window._userEmail || '')
         }
       };
       openSaleReview();
-
-      function show(m) { err.textContent = m; err.classList.remove('hidden'); return false; }
     };
 
-    // Step 2: show the details + a countdown-gated Confirm button.
     function openSaleReview() {
       const p = pendingSale; if (!p) return;
-      document.getElementById('scNo').textContent = p.no;
-      document.getElementById('scCustomer').textContent = p.customer;
-      document.getElementById('scBranch').textContent = p.branch;
-      document.getElementById('scCount').textContent = p.selected.length;
-      document.getElementById('scUnitsBody').innerHTML = p.selected.map(u => `
+      urEl('scNo').textContent = p.saleNo;
+      urEl('scTxnId').textContent = p.payload.TransactionID;
+      urEl('scCustomer').textContent = p.customer.name + ' (' + p.customer.cid + ')';
+      urEl('scAccount').textContent = p.accountNo;
+      urEl('scBranch').textContent = ur.branch;
+      urEl('scDocs').textContent = (p.unit.unitType === 'Repo' ? 'RCI ' + p.docs.RCINo : 'ATR ' + p.docs.ATRNo) + ' · SI ' + p.docs.SINo;
+      urEl('scUnitsBody').innerHTML = `
         <tr class="border-t border-slate-100">
-          <td class="px-4 py-2 font-mono text-slate-800">${window.mcEscape(u.EngineNo) || '-'}</td>
-          <td class="px-4 py-2 font-mono text-slate-600">${window.mcEscape(u.ChassisNo) || '-'}</td>
-          <td class="px-4 py-2 text-slate-700">${window.mcEscape(u.Model) || '-'}</td>
-        </tr>`).join('');
-      document.getElementById('saleConfirmModal').classList.remove('hidden');
+          <td class="px-4 py-2 font-mono text-slate-800">${window.mcEscape(p.unit.engineNo) || '-'}</td>
+          <td class="px-4 py-2 font-mono text-slate-600">${window.mcEscape(p.unit.chassisNo) || '-'}</td>
+          <td class="px-4 py-2 text-slate-700">${window.mcEscape(p.unit.model) || '-'}</td>
+          <td class="px-4 py-2 text-slate-700">${window.mcEscape(p.unit.unitType)}</td>
+        </tr>`;
+      urEl('saleConfirmModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
       if (window.lucide) lucide.createIcons();
       startSaleCountdown(SALE_REVIEW_SECONDS);
     }
 
     function startSaleCountdown(sec) {
-      const btn = document.getElementById('scConfirmBtn');
+      const btn = urEl('scConfirmBtn');
       if (scTimer) { clearInterval(scTimer); scTimer = null; }
       let remaining = sec;
       btn.disabled = true;
@@ -5828,7 +6051,7 @@
           clearInterval(scTimer); scTimer = null;
           btn.disabled = false;
           btn.classList.remove('opacity-60', 'cursor-not-allowed');
-          btn.textContent = 'Confirm & Sell';
+          btn.textContent = 'Confirm & Release';
         } else {
           btn.textContent = 'Please review… (' + remaining + ')';
         }
@@ -5836,34 +6059,41 @@
     }
 
     window.closeSaleReview = function () {
+      if (urSaving) return;
+      pendingSale = null;
       if (scTimer) { clearInterval(scTimer); scTimer = null; }
-      document.getElementById('saleConfirmModal').classList.add('hidden');
+      urEl('saleConfirmModal').classList.add('hidden');
       document.body.style.overflow = '';
     };
 
-    // Step 3: actually create the SALE.
+    // Create the Unit Release; server errors stay in the existing alert component.
     window.confirmSaleFinal = function () {
       const p = pendingSale; if (!p) return;
-      const btn = document.getElementById('scConfirmBtn');
-      if (btn.disabled) return; // guard: countdown not finished
+      const btn = urEl('scConfirmBtn');
+      if (btn.disabled) return; // guard: countdown not finished / already saving
+      urSaving = true;
       btn.disabled = true; btn.textContent = 'Saving…';
       google.script.run
         .withSuccessHandler(function (res) {
+          urSaving = false;
           if (!res || !res.success) {
-            btn.disabled = false; btn.textContent = 'Confirm & Sell';
-            window.mcAlert((res && res.message) || 'Failed to create sale.', { title: 'Could not create sale' });
+            btn.disabled = false; btn.textContent = 'Confirm & Release';
+            window.mcAlert((res && res.message) || 'Failed to create Unit Release.', { title: 'Could not release unit' });
             return;
           }
           closeSaleReview();
-          window.mcToast('Sale ' + res.transactionNo + ' recorded — ' + p.selected.length + ' unit(s) sold', 'success');
+          pendingSale = null;
+          window.mcToast('Unit Release ' + res.transactionNo + ' recorded — ' + (p.unit.engineNo || '') + ' sold', 'success');
           window.mcInventoryLoaded = false; window.invDashLoaded = false;
-          showPage('salesPage', null); loadSales();
+          urEl('salesSearch').value = '';
+          showPage('salesPage', null);
         })
         .withFailureHandler(function (e) {
-          btn.disabled = false; btn.textContent = 'Confirm & Sell';
-          window.mcAlert('' + e, { title: 'Could not create sale' });
+          urSaving = false;
+          btn.disabled = false; btn.textContent = 'Confirm & Release';
+          window.mcAlert('' + e, { title: 'Could not release unit' });
         })
-        .createSale(p.payload);
+        .createUnitRelease(p.payload);
     };
   })();
   </script>

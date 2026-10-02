@@ -34,4 +34,12 @@ GitHub backups and Apps Script deployments are separate. With clasp installed an
 clasp push
 ```
 
+Before pushing, run the local tests:
+
+```powershell
+node --test "tests/*.test.js"
+```
+
+`.claspignore` keeps `tests/` and `docs/` out of the Apps Script project. After the Unit Release change is deployed, follow the one-time setup in [BACKEND_GUIDE.md](BACKEND_GUIDE.md#unit-release-sales).
+
 Then update the web app deployment in the Apps Script editor when ready to publish the changes. Login credentials and environment files are excluded from Git.
