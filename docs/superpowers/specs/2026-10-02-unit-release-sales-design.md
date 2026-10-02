@@ -100,7 +100,7 @@ Run manually from the Apps Script editor. Idempotent and non-destructive:
 - Reads `CIR_Database` (main spreadsheet). A row is eligible when all hold:
   - `Store Branch:` matches `branch` (case-insensitive, via `_matchesBranch`).
   - `Status / Condition:` normalized equals `approved`.
-  - `Type of Applicant:` normalized equals `maker` (excludes `co-maker`).
+  - `Applicant` normalized equals `maker` (excludes `co-maker`). This is the column the CIR print template reads for Maker / Co-Maker; `Type of Applicant:` holds the channel (Walk-in, Online, …) and is not used.
   - `CID` is non-blank and **not** present in `SALES.CID`.
 - Normalization: trim, lowercase, collapse whitespace/`-`/`_` to a single space, so `Co-Maker`, `co maker`, `CO_MAKER` all read as `co maker`.
 - Returns `[{ cid, aid, name, contact, address }]`, where `aid` is the **raw** `ToWhom` value (not the resolved maker name), sorted by name.
@@ -124,7 +124,7 @@ Inside one `LockService` script lock, validate everything before the first write
 1. `TransactionID` valid per §4.2.
 2. `MCID` is a single non-blank string (arrays or lists are rejected); the unit exists in `MC_MASTER`, `CurrentStatus` is `Available` (case-insensitive), and `UnitType` is not `Invalid`.
 3. Branch = unit's `MC_MASTER.CurrentBranch` (re-derived on the server). If `Scope` is not `ALL`, it must match Branch.
-4. `CID` is a single non-blank string; the CIR row exists, its `Store Branch:` matches Branch, status is Approved, type is Maker (normalized), and `CID` is not in `SALES.CID`.
+4. `CID` is a single non-blank string; the CIR row exists, its `Store Branch:` matches Branch, status is Approved, `Applicant` is Maker (normalized), and `CID` is not in `SALES.CID`.
 5. `SaleDate` present and parseable; `AccountNo` and `SINo` non-blank after trim.
 6. Documents by `UnitType`: Brand-New requires `ATRNo` (RCINo stored blank); Repo requires `RCINo` (ATRNo stored blank).
 7. `SALE-{SINo}` does not already exist in `TRANSACTION_HEADER` (case-insensitive).
@@ -158,6 +158,7 @@ Every sale is treated as single-unit; there is no unit count or multi-unit displ
 ### 4.8 Existing `createSale()` — disabled
 
 - `createSale()` no longer writes anything. It returns `{ success: false, message: 'Create Sale is no longer supported. Use Unit Release.' }` so it cannot bypass the Unit Release validations.
+- The public `createTransaction()` returns the same rejection when `TransactionType` is `SALE` (the legacy inventory form in `Index.html` can call it directly). RR / IB-OUT / IB-IN behavior is unchanged. `createUnitRelease()` writes through `_writeTransaction()`, which has no such restriction.
 - `testPhase2Write()` in `MCDiagnostics.js` (step 5) is updated to expect this rejection; the unit then ends that test Available at Branch B, and its expected-result log line is updated accordingly.
 
 ## 5. Screens (Index.html)
@@ -223,6 +224,9 @@ The server always re-derives the branch from `MC_MASTER` and checks the CIR's br
 | Unit type not recognized | Unit {EngineNo} has an unrecognized Unit Type "{raw}". Set it to Brand-New or Repo in MC_MASTER. |
 | More than one unit or customer sent | A Unit Release must contain exactly one motorcycle and one customer. |
 | Unit outside user's branch | This unit does not belong to your branch. |
+| Unit not in MC_MASTER | Unit {MCID} was not found in MC_MASTER. |
+| Unit has no branch | Unit {EngineNo} has no Current Branch in MC_MASTER. |
+| No branch scope sent | Your account has no branch scope. Please sign in again. |
 | Customer ineligible | Customer {CID} is not an approved Maker at {branch}. |
 | Customer already has a unit | Customer {CID} already has a Unit Release ({TransactionNo}). |
 | Missing field | {Field} is required. |
@@ -230,11 +234,17 @@ The server always re-derives the branch from `MC_MASTER` and checks the CIR's br
 
 ## 8. Testing
 
-Apps Script has no test runner in this project; tests are editor-run functions following the existing `MCDiagnostics.js` pattern.
+Two layers:
 
-- `testUnitReleaseRules()` — no sheet access. Checks status/type normalization (`Approved`, ` APPROVED `, `Co-Maker`, `co_maker`, `Maker`), `UnitType` normalization (blank, `brand new`, `Brand-New`, `repo`, `Repossessed` accepted; `Demo`, `used` → `Invalid`), and required-document rules per type.
-- `testUnitReleaseFlow()` — uses a configurable approved Maker CID (`_UR_TEST_CID`) and a test unit `TEST-MC-UR-0001` placed in that CIR's branch. Verifies: rejection with an unissued Transaction ID; rejection when docs are missing; rejection when `MCID` or `CID` is an array; rejection when the test unit's `UnitType` is set to an unknown value; `createSale()` rejected; success path (header, details, movement, `SALES` row, `MC_MASTER` = Sold); second release for the same CID rejected; duplicate SI rejected; the CIR row unchanged.
-- `cleanupUnitReleaseTest()` — removes the test SALE rows from `TRANSACTION_HEADER`, `TRANSACTION_DETAILS`, `MC_MOVEMENTS`, `SALES`, and the test unit from `MC_MASTER`.
+- **Local (Node, `node --test "tests/*.test.js"`)** — the server `.js` files are loaded into a Node `vm` context with in-memory fakes for SpreadsheetApp, LockService, CacheService, Utilities and Session (`tests/harness.js`). These cover rules, setup, customer filtering, every `createUnitRelease()` rejection, the success write, `getSales()`, and the disabled legacy paths. A `.claspignore` keeps `tests/` and `docs/` out of `clasp push`.
+- **Editor-run (real sheets)**, following the existing `MCDiagnostics.js` pattern, described below.
+
+Local rules tests check status/applicant normalization (`Approved`, ` APPROVED `, `Co-Maker`, `co_maker`, `Maker`), `UnitType` normalization (blank, `brand new`, `Brand-New`, `repo`, `Repossessed` accepted; `Demo`, `used` → `Invalid`), and required-document rules per type. Duplicate-SI rejection is covered locally.
+
+Editor-run:
+
+- `testUnitReleaseFlow(cid)` — uses an approved Maker CID with no prior sale (argument, or `_UR_TEST_CID` when run from the editor) and test units `TEST-MC-UR-0001` / `TEST-MC-UR-0002` placed in that CIR's branch. Verifies: rejection with an unissued Transaction ID; rejection when docs are missing; rejection when `MCID` or `CID` is an array; rejection when the test unit's `UnitType` is set to an unknown value; `createSale()` rejected; success path (header, details, movement, `SALES` row, `MC_MASTER` = Sold); second release for the same CID (using the second test unit) rejected; the CIR row unchanged.
+- `cleanupUnitReleaseTest()` — removes the test SALE rows from `TRANSACTION_HEADER`, `TRANSACTION_DETAILS`, `MC_MOVEMENTS`, `SALES`, and the test units from `MC_MASTER`.
 - Manual UI checklist: restricted user flow; `ALL` user selecting units from two branches (customer list follows); Brand-New vs Repo document switching; "Change unit" keeps Transaction ID and selection; success refresh; server error in `mcAlert`; Sales list columns and search.
 
 ## 9. Known limitations
