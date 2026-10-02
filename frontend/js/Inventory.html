@@ -1316,13 +1316,16 @@
           if (formVersion !== urFormVersion) return;
           ur.transactionId = (res && res.transactionId) || '';
           urEl('urTxnId').value = ur.transactionId || '—';
+          urRenderSummary();
         })
         .withFailureHandler(function (e) {
           if (formVersion !== urFormVersion) return;
           urEl('urTxnId').value = '—';
+          urRenderSummary();
           window.mcAlert('' + e, { title: 'Could not start Unit Release' });
         })
         .beginUnitRelease();
+      urRenderSummary();
 
       urEl('urUnitsStatus').textContent = 'Loading available units…';
       urEl('urUnitsBody').innerHTML = '';
@@ -1337,10 +1340,45 @@
       urEl('urStep1').classList.toggle('hidden', n !== 1);
       urEl('urStep2').classList.toggle('hidden', n !== 2);
       urEl('urStepLabel').textContent = n === 1
-        ? 'Step 1 of 2 — Select an available motorcycle'
-        : 'Step 2 of 2 — Complete the Unit Release form';
+        ? 'Choose an available motorcycle to release.'
+        : 'Complete the details before releasing this unit.';
+      urEl('urProgress').setAttribute('data-step', String(n));
+      urEl('urProgStep1').setAttribute('aria-current', n === 1 ? 'step' : 'false');
+      urEl('urProgStep2').setAttribute('aria-current', n === 2 ? 'step' : 'false');
       if (window.lucide) lucide.createIcons();
     }
+
+    function urFormatDate(value) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+      if (!m) return '—';
+      return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Release Summary + customer details card. Read-only mirror of the current
+    // form state (ur.unit, ur.customer, field values) — no state of its own.
+    window.urRenderSummary = function () {
+      const u = ur.unit, c = ur.customer;
+      urEl('urSumUnit').textContent = (u && u.engineNo) || '—';
+      urEl('urSumModel').textContent = (u && [u.model, u.color].filter(Boolean).join(' · ')) || '—';
+
+      const sumCustomer = urEl('urSumCustomer');
+      sumCustomer.textContent = c ? c.name + ' · ' + c.cid : 'Not selected';
+      sumCustomer.classList.toggle('text-slate-400', !c);
+      sumCustomer.classList.toggle('text-slate-900', !!c);
+      urEl('urCustomerCard').classList.toggle('hidden', !c);
+      if (c) {
+        urEl('urCustName').textContent = c.name || '—';
+        urEl('urCustCid').textContent = c.cid;
+        urEl('urCustMeta').textContent = [c.contact, c.address].filter(Boolean).join(' · ') || 'No contact details on file';
+      }
+
+      const repo = !!u && u.unitType === 'Repo';
+      urEl('urSumDocLabel').textContent = repo ? 'RCI no.' : 'ATR no.';
+      urEl('urSumDoc').textContent = urEl(repo ? 'urRciNo' : 'urAtrNo').value.trim() || '—';
+      urEl('urSumSi').textContent = urEl('urSiNo').value.trim() || '—';
+      urEl('urSumDate').textContent = urFormatDate(urEl('urDate').value);
+      urEl('urTxnId').title = urEl('urTxnId').value;   // full ID on hover; the field truncates
+    };
 
     function urTypeBadge(u) {
       if (u.unitType === 'Repo') return '<span class="px-2 py-0.5 text-xs rounded border border-amber-200 text-amber-700">Repo</span>';
@@ -1402,6 +1440,7 @@
       urEl('urError').classList.add('hidden');
       urShowStep(2);
       if (branchChanged || !ur.customersLoaded) urLoadCustomers();
+      urRenderSummary();
     };
 
     window.urBackToStep1 = function () { urShowStep(1); renderUrUnits(); };
@@ -1417,6 +1456,7 @@
       urEl('urContact').value = '';
       urEl('urAddress').value = '';
       urEl('urCustomerList').classList.add('hidden');
+      urRenderSummary();
       const branch = ur.branch;
       const st = urEl('urCustomerStatus');
       st.textContent = 'Loading customers for ' + branch + '…';
@@ -1426,7 +1466,9 @@
           ur.customersLoaded = true;
           ur.customers = rows || [];
           if (document.activeElement === urEl('urCustomerSearch')) renderUrCustomers();
-          st.textContent = ur.customers.length + ' eligible customer(s) at ' + branch + ' (approved Maker, no unit yet)';
+          // Eligible = approved Maker at this branch with no unit yet (server-side rule).
+          const n = ur.customers.length;
+          st.textContent = n + ' approved customer' + (n === 1 ? '' : 's') + ' available';
         })
         .withFailureHandler(function (e) {
           if (request !== urCustomerRequest || formVersion !== urFormVersion) return;
@@ -1437,7 +1479,7 @@
 
     window.urCustomerTyped = function () {
       urCustomerIndex = -1;
-      if (ur.customer) { ur.customer = null; urEl('urContact').value = ''; urEl('urAddress').value = ''; }
+      if (ur.customer) { ur.customer = null; urEl('urContact').value = ''; urEl('urAddress').value = ''; urRenderSummary(); }
       renderUrCustomers();
     };
 
@@ -1473,8 +1515,9 @@
       const list = urEl('urCustomerList');
       const rows = urCustomerMatches();
       list.innerHTML = rows.length
-        ? rows.map((c, i) => `<button type="button" role="option" tabindex="-1" id="urCustomerOption${i}" aria-selected="${i === urCustomerIndex}" data-cid="${window.mcEscape(c.cid)}" onmousedown="event.preventDefault()" onclick="selectUrCustomer(this.dataset.cid)" class="${i === urCustomerIndex ? 'bg-orange-50' : ''} w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex justify-between gap-3">
-            <span class="text-slate-800">${window.mcEscape(c.name)}</span><span class="font-mono text-xs text-slate-400">${window.mcEscape(c.cid)}</span>
+        ? rows.map((c, i) => `<button type="button" role="option" tabindex="-1" id="urCustomerOption${i}" aria-selected="${i === urCustomerIndex}" data-cid="${window.mcEscape(c.cid)}" onmousedown="event.preventDefault()" onclick="selectUrCustomer(this.dataset.cid)" class="${i === urCustomerIndex ? 'bg-slate-100' : ''} w-full text-left px-3 py-2 hover:bg-slate-50 block">
+            <span class="block text-sm text-slate-900">${window.mcEscape(c.name)}</span>
+            <span class="block text-xs text-slate-500"><span class="font-mono">${window.mcEscape(c.cid)}</span> · Maker</span>
           </button>`).join('')
         : '<div class="px-3 py-2 text-sm text-slate-400">No matching customer.</div>';
       list.classList.remove('hidden');
@@ -1494,6 +1537,7 @@
       urEl('urContact').value = c.contact || '';
       urEl('urAddress').value = c.address || '';
       closeUrCustomers();
+      urRenderSummary();
     };
 
     // Validate, then open the review-and-confirm modal (does NOT submit yet).

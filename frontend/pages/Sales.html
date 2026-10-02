@@ -50,13 +50,19 @@
 
     <!-- CREATE UNIT RELEASE — step 1: select motorcycle, step 2: release form -->
     <div id="createSalePage" class="hidden overflow-y-auto w-full flex-1">
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <button onclick="showPage('salesPage', null)" class="mb-4 text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
           <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sales
         </button>
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-slate-800">New Unit Release</h1>
-          <p id="urStepLabel" class="text-sm text-slate-500">Step 1 of 2 — Select an available motorcycle</p>
+        <div class="mb-8">
+          <h1 class="text-[22px] font-semibold text-slate-900">New Unit Release</h1>
+          <p id="urStepLabel" class="mt-1 text-sm text-slate-500">Choose an available motorcycle to release.</p>
+          <!-- Progress: data-step is set by urShowStep(); state shows as icon + weight, not color alone -->
+          <ol id="urProgress" data-step="1" class="ur-progress mt-5" aria-label="Unit release progress">
+            <li id="urProgStep1" class="ur-progress-step" data-n="1" aria-current="step"><span class="ur-progress-dot" aria-hidden="true"></span>Select unit</li>
+            <li class="ur-progress-line" aria-hidden="true"></li>
+            <li id="urProgStep2" class="ur-progress-step" data-n="2"><span class="ur-progress-dot" aria-hidden="true"></span>Release details</li>
+          </ol>
         </div>
 
         <!-- STEP 1 — SELECT MOTORCYCLE -->
@@ -93,89 +99,127 @@
           </div>
         </div>
 
-        <!-- STEP 2 — UNIT RELEASE FORM (one card: motorcycle summary, customer, sale, footer) -->
+        <!-- STEP 2 — RELEASE DETAILS: selected unit, then form (left) + live summary (right) -->
         <div id="urStep2" class="hidden">
-          <div class="bg-white border border-slate-200 rounded-lg">
 
-            <!-- Selected motorcycle -->
-            <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-              <div class="min-w-0">
-                <div class="flex items-center gap-3">
-                  <span id="urEngine" class="font-mono text-lg font-medium text-slate-900">-</span>
-                  <span id="urTypeBadge"></span>
+          <!-- Selected unit -->
+          <section class="bg-white border border-slate-200 rounded-md px-5 py-4" aria-labelledby="urUnitHeading">
+            <div class="flex items-center justify-between gap-3">
+              <h2 id="urUnitHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected unit</h2>
+              <button type="button" onclick="urBackToStep1()" class="text-sm text-slate-500 hover:text-slate-900 hover:underline underline-offset-2">Change unit</button>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              <span id="urEngine" class="font-mono text-[17px] font-semibold text-slate-900">-</span>
+              <span id="urTypeBadge"></span>
+            </div>
+            <div class="mt-2 text-sm leading-6">
+              <div id="urModel" class="text-slate-800">-</div>
+              <div id="urColor" class="text-slate-600">-</div>
+              <div id="urCurBranch" class="text-slate-500">-</div>
+            </div>
+            <dl class="mt-4 grid grid-cols-3 gap-4 max-w-xl text-sm">
+              <div><dt class="text-xs text-slate-400">Model code</dt><dd id="urModelCode" class="mt-0.5 text-slate-700">-</dd></div>
+              <div><dt class="text-xs text-slate-400">Chassis</dt><dd id="urChassis" class="mt-0.5 font-mono text-slate-700">-</dd></div>
+              <div><dt class="text-xs text-slate-400">Status</dt><dd id="urCurStatus" class="mt-0.5 text-slate-700">-</dd></div>
+            </dl>
+            <details class="mt-3 text-xs text-slate-400">
+              <summary class="cursor-pointer select-none w-fit hover:text-slate-600">More details</summary>
+              <p class="mt-1">MCID <span id="urMcid" class="font-mono text-slate-500 break-all">-</span></p>
+            </details>
+            <input id="urBranch" type="hidden" readonly />
+          </section>
+
+          <div class="mt-8 md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 md:items-start">
+
+            <!-- Form -->
+            <div class="bg-white border border-slate-200 rounded-md">
+              <section class="px-5 py-5" aria-labelledby="urCustHeading">
+                <h2 id="urCustHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Customer</h2>
+                <div class="mt-4 relative">
+                  <label for="urCustomerSearch" class="block text-sm text-slate-700 mb-1.5">Customer / account name <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                  <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    <input id="urCustomerSearch" type="text" role="combobox" aria-autocomplete="list" aria-controls="urCustomerList" aria-expanded="false" aria-describedby="urCustomerStatus" autocomplete="off" placeholder="Search customer name or CID…" class="ur-input w-full pl-9"
+                      oninput="urCustomerTyped()" onfocus="renderUrCustomers()" onkeydown="urCustomerKeydown(event)" onblur="closeUrCustomers()" />
+                  </div>
+                  <div id="urCustomerList" role="listbox" aria-label="Eligible customers" class="hidden absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-sm py-1"></div>
+                  <p id="urCustomerStatus" class="mt-1.5 text-xs text-slate-500"></p>
                 </div>
-                <p class="mt-1 text-sm text-slate-600">
-                  <span id="urModel">-</span> · <span id="urColor">-</span> · Chassis <span id="urChassis" class="font-mono">-</span> · <span id="urCurBranch">-</span>
-                </p>
-                <p class="mt-0.5 text-xs text-slate-400 truncate">
-                  Model code <span id="urModelCode">-</span> · <span id="urCurStatus">-</span> · MCID <span id="urMcid" class="font-mono">-</span>
-                </p>
-                <input id="urBranch" type="hidden" readonly />
-              </div>
-              <button type="button" onclick="urBackToStep1()" class="shrink-0 text-sm text-slate-500 hover:text-slate-800">Change unit</button>
+
+                <!-- Shown only after a customer is picked (see urRenderSummary) -->
+                <div id="urCustomerCard" class="hidden mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p id="urCustName" class="text-sm font-medium text-slate-900">-</p>
+                  <p id="urCustCid" class="font-mono text-xs text-slate-500">-</p>
+                  <p id="urCustMeta" class="mt-1.5 text-sm text-slate-600">-</p>
+                  <input id="urContact" type="hidden" readonly />
+                  <input id="urAddress" type="hidden" readonly />
+                </div>
+
+                <div class="mt-4 sm:max-w-xs">
+                  <label for="urAccountNo" class="block text-sm text-slate-700 mb-1.5">Account no. <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                  <input id="urAccountNo" type="text" placeholder="Customer account number" class="ur-input w-full" />
+                </div>
+              </section>
+
+              <section class="px-5 py-5 border-t border-slate-100" aria-labelledby="urSaleHeading">
+                <h2 id="urSaleHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Sale details</h2>
+                <div class="mt-4 sm:max-w-xs">
+                  <label for="urDate" class="block text-sm text-slate-700 mb-1.5">Date of sale <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                  <input id="urDate" type="date" class="ur-input w-full" oninput="urRenderSummary()" onchange="urRenderSummary()" />
+                </div>
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div id="urAtrWrap">
+                    <label for="urAtrNo" class="block text-sm text-slate-700 mb-1.5">ATR no. <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                    <input id="urAtrNo" type="text" class="ur-input w-full" oninput="urRenderSummary()" />
+                  </div>
+                  <div id="urRciWrap" class="hidden">
+                    <label for="urRciNo" class="block text-sm text-slate-700 mb-1.5">RCI no. <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                    <input id="urRciNo" type="text" class="ur-input w-full" oninput="urRenderSummary()" />
+                  </div>
+                  <div>
+                    <label for="urSiNo" class="block text-sm text-slate-700 mb-1.5">SI no. <span class="text-slate-400" aria-hidden="true">*</span><span class="sr-only">(required)</span></label>
+                    <input id="urSiNo" type="text" class="ur-input w-full" oninput="urRenderSummary()" />
+                  </div>
+                </div>
+              </section>
             </div>
 
-            <!-- Customer -->
-            <div class="px-6 py-5 border-t border-slate-100">
-              <h2 class="text-sm font-semibold text-slate-800 mb-4">Customer</h2>
-              <div class="relative">
-                <label for="urCustomerSearch" class="block text-sm text-slate-600 mb-1.5">Customer / account name <span class="text-slate-400">*</span></label>
-                <input id="urCustomerSearch" type="text" role="combobox" aria-autocomplete="list" aria-controls="urCustomerList" aria-expanded="false" autocomplete="off" placeholder="Search approved Maker by name or CID…" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400"
-                  oninput="urCustomerTyped()" onfocus="renderUrCustomers()" onkeydown="urCustomerKeydown(event)" onblur="closeUrCustomers()" />
-                <div id="urCustomerList" role="listbox" aria-label="Eligible customers" class="hidden absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-md"></div>
-                <p id="urCustomerStatus" class="mt-1.5 text-xs text-slate-400"></p>
-              </div>
-              <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
-                <div>
-                  <label for="urContact" class="block text-xs text-slate-400">Contact</label>
-                  <input id="urContact" type="text" readonly placeholder="—" class="w-full border-0 bg-transparent p-0 text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none" />
+            <!-- Release summary: read-only mirror of the form (see urRenderSummary) -->
+            <aside class="mt-8 md:mt-0 md:sticky md:top-6" aria-labelledby="urSummaryHeading">
+              <h2 id="urSummaryHeading" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Release summary</h2>
+              <dl class="mt-3 text-sm">
+                <div class="py-3 border-t border-slate-200">
+                  <dt class="text-xs text-slate-500">Unit</dt>
+                  <dd id="urSumUnit" class="mt-0.5 font-mono text-slate-900">—</dd>
+                  <dd id="urSumModel" class="text-slate-600">—</dd>
                 </div>
-                <div class="md:col-span-2">
-                  <label for="urAddress" class="block text-xs text-slate-400">Address</label>
-                  <input id="urAddress" type="text" readonly placeholder="—" class="w-full border-0 bg-transparent p-0 text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none" />
+                <div class="py-3 border-t border-slate-200">
+                  <dt class="text-xs text-slate-500">Customer</dt>
+                  <dd id="urSumCustomer" class="mt-0.5 text-slate-400">Not selected</dd>
                 </div>
-              </div>
-              <div class="mt-5 md:w-1/3">
-                <label for="urAccountNo" class="block text-sm text-slate-600 mb-1.5">Account no. <span class="text-slate-400">*</span></label>
-                <input id="urAccountNo" type="text" placeholder="Customer account number" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
-              </div>
-            </div>
-
-            <!-- Sale: date + documents (ATR for Brand-New, RCI for Repo) -->
-            <div class="px-6 py-5 border-t border-slate-100">
-              <h2 class="text-sm font-semibold text-slate-800 mb-4">Sale</h2>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label for="urDate" class="block text-sm text-slate-600 mb-1.5">Date of sale <span class="text-slate-400">*</span></label>
-                  <input id="urDate" type="date" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                <div class="pt-3 pb-1.5 border-t border-slate-200">
+                  <dt class="text-xs text-slate-500">Sale date</dt>
+                  <dd id="urSumDate" class="mt-0.5 text-slate-900">—</dd>
                 </div>
-                <div id="urAtrWrap">
-                  <label for="urAtrNo" class="block text-sm text-slate-600 mb-1.5">ATR no. <span class="text-slate-400">*</span></label>
-                  <input id="urAtrNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                <div class="py-1.5">
+                  <dt id="urSumDocLabel" class="text-xs text-slate-500">ATR no.</dt>
+                  <dd id="urSumDoc" class="mt-0.5 text-slate-900">—</dd>
                 </div>
-                <div id="urRciWrap" class="hidden">
-                  <label for="urRciNo" class="block text-sm text-slate-600 mb-1.5">RCI no. <span class="text-slate-400">*</span></label>
-                  <input id="urRciNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                <div class="pt-1.5 pb-3">
+                  <dt class="text-xs text-slate-500">SI no.</dt>
+                  <dd id="urSumSi" class="mt-0.5 text-slate-900">—</dd>
                 </div>
-                <div>
-                  <label for="urSiNo" class="block text-sm text-slate-600 mb-1.5">SI no. <span class="text-slate-400">*</span></label>
-                  <input id="urSiNo" type="text" class="w-full border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400" />
+                <div class="py-3 border-t border-slate-200">
+                  <dt><label for="urTxnId" class="text-xs text-slate-500">Transaction</label></dt>
+                  <dd><input id="urTxnId" type="text" readonly data-no-uppercase class="mt-0.5 w-full border-0 bg-transparent p-0 font-mono text-xs text-slate-400 truncate focus:outline-none" /></dd>
                 </div>
-              </div>
-              <div id="urError" class="hidden mt-4 text-sm text-rose-600"></div>
-            </div>
-
-            <!-- Footer -->
-            <div class="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div class="flex items-center gap-1.5 min-w-0 text-xs text-slate-400">
-                <label for="urTxnId" class="shrink-0">Transaction</label>
-                <input id="urTxnId" type="text" readonly data-no-uppercase class="w-full sm:w-80 border-0 bg-transparent p-0 font-mono text-xs text-slate-400 focus:outline-none" />
-              </div>
-              <div class="flex justify-end gap-2 shrink-0">
-                <button onclick="showPage('salesPage', null)" class="px-4 py-2 text-sm rounded-md text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button id="urSubmitBtn" onclick="submitSale()" class="px-4 py-2 text-sm rounded-md bg-slate-900 text-white font-medium hover:bg-slate-800">Review release</button>
-              </div>
-            </div>
+              </dl>
+              <div id="urError" role="alert" class="hidden mb-3 text-sm text-rose-600"></div>
+              <button id="urSubmitBtn" type="button" onclick="submitSale()" class="w-full flex items-center justify-between px-4 py-2.5 text-sm rounded-md bg-slate-900 text-white font-medium hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
+                Review release <span aria-hidden="true">&rarr;</span>
+              </button>
+              <button type="button" onclick="showPage('salesPage', null)" class="mt-2 w-full px-4 py-2 text-sm rounded-md text-slate-600 hover:text-slate-900 hover:bg-white">Cancel</button>
+            </aside>
           </div>
         </div>
       </main>

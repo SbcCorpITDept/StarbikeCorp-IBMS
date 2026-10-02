@@ -189,7 +189,55 @@ test('customer picker ArrowUp starts at the last option and visibly highlights i
   assert.equal(ui.el('urCustomerSearch').attributes['aria-activedescendant'], 'urCustomerOption1');
   const selected = ui.el('urCustomerList').innerHTML.match(/<button[^>]*aria-selected="true"[^>]*>/);
   assert.ok(selected);
-  assert.match(selected[0], /bg-orange-50/);
+  assert.match(selected[0], /bg-slate-100/);
   ui.window.urCustomerKeydown({ key: 'Enter', preventDefault() {} });
   assert.match(ui.el('urCustomerSearch').value, /SANTOS/);
+});
+
+test('progress indicator follows the step', () => {
+  const ui = open();
+  assert.equal(ui.el('urProgress').attributes['data-step'], '1');
+  assert.equal(ui.el('urProgStep1').attributes['aria-current'], 'step');
+  choose(ui);
+  assert.equal(ui.el('urProgress').attributes['data-step'], '2');
+  assert.equal(ui.el('urProgStep2').attributes['aria-current'], 'step');
+  ui.window.urBackToStep1();
+  assert.equal(ui.el('urProgress').attributes['data-step'], '1');
+});
+
+test('release summary mirrors the form; customer details appear only after selection', () => {
+  const ui = open(); choose(ui);
+  assert.equal(ui.el('urSumUnit').textContent, 'ENG1001');
+  assert.equal(ui.el('urSumModel').textContent, 'XRM125 · RED');
+  assert.equal(ui.el('urSumCustomer').textContent, 'Not selected');
+  assert.equal(ui.el('urCustomerCard').classList.contains('hidden'), true);
+  assert.match(ui.el('urCustomerStatus').textContent, /^2 approved customers available$/);
+
+  ui.window.selectUrCustomer('CID-2');
+  assert.equal(ui.el('urCustomerCard').classList.contains('hidden'), false);
+  assert.equal(ui.el('urCustName').textContent, 'SANTOS, ANA');
+  assert.equal(ui.el('urCustCid').textContent, 'CID-2');
+  assert.equal(ui.el('urCustMeta').textContent, '09170000002 · PILI');
+  assert.equal(ui.el('urSumCustomer').textContent, 'SANTOS, ANA · CID-2');
+
+  ui.el('urDate').value = '2026-10-02'; ui.el('urAtrNo').value = ' ATR-9 '; ui.el('urSiNo').value = 'SI-9';
+  ui.window.urRenderSummary();
+  assert.equal(ui.el('urSumDate').textContent, 'Oct 2, 2026');
+  assert.equal(ui.el('urSumDocLabel').textContent, 'ATR no.');
+  assert.equal(ui.el('urSumDoc').textContent, 'ATR-9');
+  assert.equal(ui.el('urSumSi').textContent, 'SI-9');
+  assert.equal(ui.el('urTxnId').title, ui.el('urTxnId').value);
+
+  ui.window.urCustomerTyped();
+  assert.equal(ui.el('urSumCustomer').textContent, 'Not selected');
+  assert.equal(ui.el('urCustomerCard').classList.contains('hidden'), true);
+});
+
+test('repo unit shows RCI in the summary; customer options show CID and role', () => {
+  const ui = open(); choose(ui, 'MC-2');
+  ui.el('urRciNo').value = 'RCI-7'; ui.window.urRenderSummary();
+  assert.equal(ui.el('urSumDocLabel').textContent, 'RCI no.');
+  assert.equal(ui.el('urSumDoc').textContent, 'RCI-7');
+  ui.window.renderUrCustomers();
+  assert.match(ui.el('urCustomerList').innerHTML, /CID-2<\/span> · Maker/);
 });
