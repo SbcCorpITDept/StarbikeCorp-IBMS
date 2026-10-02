@@ -1,11 +1,11 @@
 # Unit Release (Sales) — Design
 
 Date: 2026-10-02
-Status: Draft for review
+Status: Approved
 
 ## 1. Goal
 
-Replace the current multi-unit "Create Sale" screen with a controlled **Unit Release** flow: one Available motorcycle is released to one approved customer, with the required sales documents for the unit's type, and the sale is traceable as **Customer → CIR → Sale → Sold unit**.
+Replace the current multi-unit "Create Sale" screen with a controlled **Unit Release** flow. Business rule: **1 Sale = 1 Customer = 1 Motorcycle Unit** — exactly one `CID` and one `MCID` per sale. One Available motorcycle is released to one approved customer, with the required sales documents for the unit's type, and the sale is traceable as **Customer → CIR → Sale → Sold unit**.
 
 ## 2. Scope
 
@@ -33,7 +33,10 @@ Out of scope (unchanged in this phase):
 - Appended as the last column: `UnitType`, values `Brand-New` or `Repo`.
 - `setupSalesSchema()` adds the header if missing and fills only **blank** cells with `Brand-New`.
 - Repossessed units are changed to `Repo` manually in the sheet.
-- Reading rule (normalized, case-insensitive): `repo` or `repossessed` → `Repo`; anything else, including blank → `Brand-New`.
+- Reading rule (trimmed, case-insensitive). Only known values are accepted:
+  - blank, `brand-new`, `brand new` → `Brand-New`
+  - `repo`, `repossessed` → `Repo`
+  - anything else → `Invalid`; the unit cannot be released until the cell is corrected.
 - Existing writers (`_upsertMCMaster`) are not changed; new rows they append leave `UnitType` blank, which reads as `Brand-New`.
 - `MC_SCHEMA.MC_MASTER` gains `UnitType` at the end so `setupDatabase()` creates it for new installs.
 
@@ -104,7 +107,7 @@ Run manually from the Apps Script editor. Idempotent and non-destructive:
 
 ### 4.4 `getAvailableUnits(branch)` (unchanged signature)
 
-- `_readMCMaster` adds `unitType` (normalized per §3.1) to each record. No other behavior changes.
+- `_readMCMaster` adds `unitType` (`Brand-New`, `Repo`, or `Invalid`, per §3.1) and `unitTypeRaw` (the cell text) to each record. No other behavior changes.
 
 ### 4.5 `createUnitRelease(payload)` (MCSales.js)
 
@@ -119,9 +122,9 @@ Payload (only these fields are read):
 Inside one `LockService` script lock, validate everything before the first write:
 
 1. `TransactionID` valid per §4.2.
-2. Exactly one `MCID`; the unit exists in `MC_MASTER` and `CurrentStatus` is `Available` (case-insensitive).
+2. `MCID` is a single non-blank string (arrays or lists are rejected); the unit exists in `MC_MASTER`, `CurrentStatus` is `Available` (case-insensitive), and `UnitType` is not `Invalid`.
 3. Branch = unit's `MC_MASTER.CurrentBranch` (re-derived on the server). If `Scope` is not `ALL`, it must match Branch.
-4. Exactly one `CID`; the CIR row exists, its `Store Branch:` matches Branch, status is Approved, type is Maker (normalized), and `CID` is not in `SALES.CID`.
+4. `CID` is a single non-blank string; the CIR row exists, its `Store Branch:` matches Branch, status is Approved, type is Maker (normalized), and `CID` is not in `SALES.CID`.
 5. `SaleDate` present and parseable; `AccountNo` and `SINo` non-blank after trim.
 6. Documents by `UnitType`: Brand-New requires `ATRNo` (RCINo stored blank); Repo requires `RCINo` (ATRNo stored blank).
 7. `SALE-{SINo}` does not already exist in `TRANSACTION_HEADER` (case-insensitive).
@@ -144,17 +147,18 @@ No rollback: if a sheet write throws partway, rows already written remain and th
 
 ### 4.7 `getSales(branch)` (MCSales.js)
 
-Returns one row per SALE header in scope (`_matchesBranch(SourceLocation, branch)`), joined with `SALES` (by `TransactionID`) and `TRANSACTION_DETAILS` (engine number):
+Returns one row per SALE header in scope (`_matchesBranch(SourceLocation, branch)`), joined with `SALES` (by `TransactionID`) and its single `TRANSACTION_DETAILS` row (engine number):
 
 ```
 { transactionNo, transactionId, date, customer, accountNo, siNo, engineNo, unitType, branch, status }
 ```
 
-Sales created before this change (no `SALES` row) show blank Account No / SI No / Unit Type. Sorted newest first.
+Every sale is treated as single-unit; there is no unit count or multi-unit display. Sales created before this change (no `SALES` row) show blank Account No / SI No / Unit Type. Sorted newest first.
 
-### 4.8 Existing `createSale()`
+### 4.8 Existing `createSale()` — disabled
 
-Left in place and unchanged (no longer called by the UI).
+- `createSale()` no longer writes anything. It returns `{ success: false, message: 'Create Sale is no longer supported. Use Unit Release.' }` so it cannot bypass the Unit Release validations.
+- `testPhase2Write()` in `MCDiagnostics.js` (step 5) is updated to expect this rejection; the unit then ends that test Available at Branch B, and its expected-result log line is updated accordingly.
 
 ## 5. Screens (Index.html)
 
@@ -177,7 +181,8 @@ On "New Unit Release":
 **Step 1 — Select motorcycle**
 
 - Search box filters by Engine No. as the user types.
-- Table with a radio per row: Engine No., Chassis No., Model, Color, Unit Type (plus Branch column for `ALL` users).
+- Table with a radio per row: Engine No., Chassis No., Model, Color, Unit Type (plus Branch column for `ALL` users). Only one unit can be selected.
+- Units with an `Invalid` type are listed with a red "Invalid type: {raw}" badge and a disabled radio.
 - "Continue" is disabled until a unit is selected.
 
 **Step 2 — Unit Release form**
@@ -215,6 +220,8 @@ The server always re-derives the branch from `MC_MASTER` and checks the CIR's br
 |---|---|
 | Expired/unknown Transaction ID | This release form has expired. Please start a new Unit Release. |
 | Unit not Available | Unit {EngineNo} is no longer Available (status: {status}). |
+| Unit type not recognized | Unit {EngineNo} has an unrecognized Unit Type "{raw}". Set it to Brand-New or Repo in MC_MASTER. |
+| More than one unit or customer sent | A Unit Release must contain exactly one motorcycle and one customer. |
 | Unit outside user's branch | This unit does not belong to your branch. |
 | Customer ineligible | Customer {CID} is not an approved Maker at {branch}. |
 | Customer already has a unit | Customer {CID} already has a Unit Release ({TransactionNo}). |
@@ -225,8 +232,8 @@ The server always re-derives the branch from `MC_MASTER` and checks the CIR's br
 
 Apps Script has no test runner in this project; tests are editor-run functions following the existing `MCDiagnostics.js` pattern.
 
-- `testUnitReleaseRules()` — no sheet access. Checks status/type normalization (`Approved`, ` APPROVED `, `Co-Maker`, `co_maker`, `Maker`), `UnitType` normalization (blank, `repo`, `Repossessed`, `Brand-New`), and required-document rules per type.
-- `testUnitReleaseFlow()` — uses a configurable approved Maker CID (`_UR_TEST_CID`) and a test unit `TEST-MC-UR-0001` placed in that CIR's branch. Verifies: rejection with an unissued Transaction ID; rejection when docs are missing; success path (header, details, movement, `SALES` row, `MC_MASTER` = Sold); second release for the same CID rejected; duplicate SI rejected; the CIR row unchanged.
+- `testUnitReleaseRules()` — no sheet access. Checks status/type normalization (`Approved`, ` APPROVED `, `Co-Maker`, `co_maker`, `Maker`), `UnitType` normalization (blank, `brand new`, `Brand-New`, `repo`, `Repossessed` accepted; `Demo`, `used` → `Invalid`), and required-document rules per type.
+- `testUnitReleaseFlow()` — uses a configurable approved Maker CID (`_UR_TEST_CID`) and a test unit `TEST-MC-UR-0001` placed in that CIR's branch. Verifies: rejection with an unissued Transaction ID; rejection when docs are missing; rejection when `MCID` or `CID` is an array; rejection when the test unit's `UnitType` is set to an unknown value; `createSale()` rejected; success path (header, details, movement, `SALES` row, `MC_MASTER` = Sold); second release for the same CID rejected; duplicate SI rejected; the CIR row unchanged.
 - `cleanupUnitReleaseTest()` — removes the test SALE rows from `TRANSACTION_HEADER`, `TRANSACTION_DETAILS`, `MC_MOVEMENTS`, `SALES`, and the test unit from `MC_MASTER`.
 - Manual UI checklist: restricted user flow; `ALL` user selecting units from two branches (customer list follows); Brand-New vs Repo document switching; "Change unit" keeps Transaction ID and selection; success refresh; server error in `mcAlert`; Sales list columns and search.
 
@@ -235,4 +242,3 @@ Apps Script has no test runner in this project; tests are editor-run functions f
 - The branch scope and `CreatedBy` still come from the browser's login state; server functions do not verify a session. The server does re-derive the sale branch from `MC_MASTER`, but a caller could still claim `Scope = ALL`. To be addressed with the custom login work.
 - Sheets writes are not transactional (§4.5).
 - `CacheService` entries can be evicted early; the user then sees the "form expired" message and starts again.
-- `createSale()` remains callable and does not perform the new checks.
