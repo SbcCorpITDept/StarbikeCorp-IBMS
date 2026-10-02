@@ -37,6 +37,28 @@
   </style>
 
 
+  <style>
+    /* Shared branding for sign-in and navigation. */
+    .brand-lockup { display: flex; align-items: center; gap: 16px; }
+    .brand-logo { width: 76px; height: 76px; flex-shrink: 0; object-fit: contain; }
+    .brand-copy { min-width: 0; }
+    .brand-wordmark { margin: 0; color: #12356b; font-size: 38px; font-weight: 700; line-height: 1; letter-spacing: -0.045em; }
+    .brand-wordmark::after { content: ''; display: block; width: 32px; height: 3px; margin-top: 10px; border-radius: 2px; background: #e52329; }
+    .brand-description { margin: 9px 0 0; color: #475569; font-size: 11px; font-weight: 600; line-height: 1.55; letter-spacing: 0.035em; }
+    .brand-description span { display: block; }
+    .brand-lockup--nav { gap: 10px; text-decoration: none; }
+    .brand-lockup--nav .brand-logo { width: 40px; height: 40px; }
+    .brand-lockup--nav .brand-wordmark { font-size: 21px; letter-spacing: -0.035em; }
+    .brand-lockup--nav .brand-wordmark::after { width: 22px; height: 2px; margin-top: 5px; }
+    .brand-lockup--nav:focus-visible { outline: 2px solid #12356b; outline-offset: 5px; border-radius: 4px; }
+    @media (max-width: 380px) {
+      .brand-lockup { gap: 12px; }
+      .brand-logo { width: 64px; height: 64px; }
+      .brand-wordmark { font-size: 32px; }
+      .brand-description { font-size: 10px; }
+    }
+  </style>
+
   <!-- NAVIGATION STYLE -->
   <style>
     .nav-link {
@@ -474,13 +496,13 @@
   <!-- ==================== LOGIN SCREEN ==================== -->
   <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-slate-50">
     <div class="fade-element w-full max-w-md">
-      <div class="flex flex-col items-center gap-3 mb-8">
-        <img src="https://drive.google.com/thumbnail?id=1FmOpWxUdvh0_zD62GUvJbpt61vb29VQ7&sz=w1000"
+      <div class="brand-lockup justify-center mb-8">
+        <img src="https://drive.google.com/thumbnail?id=1TkLG54Abvzrs13CBbWYCzrovIIGgI8ys&sz=w400"
              alt="Starbike Corporation Logo"
-             class="h-16 w-auto max-w-[240px] object-contain">
-        <div class="text-center">
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900">IBMS</h1>
-          <p class="text-xs text-slate-500 font-medium">Integrated Branch Management System</p>
+             class="brand-logo" width="76" height="76">
+        <div class="brand-copy">
+          <h1 class="brand-wordmark">IBMS</h1>
+          <p class="brand-description"><span>Integrated Branch</span><span>Management System</span></p>
         </div>
       </div>
 
@@ -591,11 +613,11 @@
         <div class="flex items-center gap-x-8">
 
           <!-- Logo -->
-          <a href="#" onclick="showPage('dashboardPage', null)" class="flex items-center gap-2 flex-shrink-0" aria-label="IBMS dashboard" title="Integrated Branch Management System">
-            <img src="https://drive.google.com/thumbnail?id=1FmOpWxUdvh0_zD62GUvJbpt61vb29VQ7&sz=w1000" 
+          <a href="#" onclick="showPage('dashboardPage', null)" class="brand-lockup brand-lockup--nav flex-shrink-0" aria-label="IBMS dashboard" title="Integrated Branch Management System">
+            <img src="https://drive.google.com/thumbnail?id=1TkLG54Abvzrs13CBbWYCzrovIIGgI8ys&sz=w400"
                  alt="Starbike Corporation Logo" 
-                 class="h-9 w-auto">
-            <span class="text-sm font-bold tracking-tight text-slate-900">IBMS</span>
+                 class="brand-logo" width="40" height="40">
+            <span class="brand-wordmark">IBMS</span>
           </a>
 
           <!-- Desktop Navigation -->
